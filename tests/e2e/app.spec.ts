@@ -43,9 +43,53 @@ test('supports legal routes and has no serious accessibility violations', async 
   expect(results.violations.filter((violation) => ['serious', 'critical'].includes(violation.impact ?? ''))).toEqual([]);
 });
 
-test('works at a 390px viewport', async ({ page }) => {
+test('mobile status ledger is keyboard-scrollable and passes axe', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
-  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Pin your first claim' })).toBeVisible();
+  await page.getByRole('button', { name: 'Try a three-claim example' }).click();
+
+  const ledger = page.getByRole('list', { name: 'Self-assessed boundary summary' });
+  const dimensions = await ledger.evaluate((element) => ({
+    clientWidth: element.clientWidth,
+    scrollWidth: element.scrollWidth,
+  }));
+  expect(dimensions.scrollWidth).toBeGreaterThan(dimensions.clientWidth);
+
+  await ledger.focus();
+  await expect(ledger).toBeFocused();
+  await page.keyboard.press('ArrowRight');
+  await expect.poll(() => ledger.evaluate((element) => element.scrollLeft)).toBeGreaterThan(0);
+
+  const results = await new AxeBuilder({ page }).analyze();
+  expect(results.violations.filter((violation) => ['serious', 'critical'].includes(violation.impact ?? ''))).toEqual([]);
+});
+
+test('updated service worker runs the real application offline', async ({ context, page }) => {
+  await page.goto('/');
+  await page.evaluate(async () => {
+    await navigator.serviceWorker.ready;
+    if (!navigator.serviceWorker.controller) {
+      await new Promise<void>((resolve) => navigator.serviceWorker.addEventListener('controllerchange', () => resolve(), { once: true }));
+    }
+  });
+  await page.reload();
+
+  const cacheEntries = await page.evaluate(async () => {
+    const cache = await caches.open('kbm-shell-v4');
+    return (await cache.keys()).map((request) => request.url);
+  });
+  expect(cacheEntries.some((url) => /\/assets\/index-[^/]+\.js$/.test(url))).toBe(true);
+  expect(cacheEntries.some((url) => /\/assets\/index-[^/]+\.css$/.test(url))).toBe(true);
+
+  const updateState = await page.evaluate(async () => {
+    const registration = await navigator.serviceWorker.ready;
+    await registration.update();
+    return { installing: Boolean(registration.installing), waiting: Boolean(registration.waiting) };
+  });
+  expect(updateState).toEqual({ installing: false, waiting: false });
+
+  await context.setOffline(true);
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await expect(page.getByRole('heading', { level: 1, name: 'Find the edge of what you can explain.' })).toBeVisible();
+  await expect(page.getByText('You’re offline. Your map still works and stays on this device.')).toBeVisible();
 });

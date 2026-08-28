@@ -133,6 +133,7 @@ h3 { font-size: 20px; line-height: 1.25; }
 .upgrade-sheet { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; padding: clamp(24px, 4vw, 48px); background: var(--paper); border: 1px solid var(--edge); box-shadow: 8px 10px 0 var(--shadow); }
 .price { font: 700 38px/1 var(--serif); margin: 14px 0; }
 .restore-form { align-self: end; }
+.merchant-note { margin-top: 24px; }
 .field { margin: 0 0 20px; }
 .field label, .field-label { display: block; margin-bottom: 7px; font-weight: 750; }
 .field-hint { margin: 5px 0 0; color: var(--muted); font-size: 13px; }

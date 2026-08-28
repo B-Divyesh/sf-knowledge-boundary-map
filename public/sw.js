@@ -1,8 +1,18 @@
-const CACHE = 'kbm-shell-v1';
-const SHELL = ['/', '/privacy', '/terms', '/upgrade', '/manifest.webmanifest', '/favicon.svg', '/assets/boundary-diorama.webp'];
+const CACHE = 'kbm-shell-v4';
+const SHELL = ['/privacy', '/terms', '/upgrade', '/manifest.webmanifest', '/favicon.svg', '/assets/boundary-diorama.avif', '/assets/boundary-diorama.webp'];
+
+async function cacheShell() {
+  const cache = await caches.open(CACHE);
+  const home = await fetch('/');
+  if (!home.ok) throw new Error('Could not cache the application shell.');
+  const markup = await home.clone().text();
+  const buildAssets = [...markup.matchAll(/(?:href|src)="(\/assets\/[^"]+)"/g)].map((match) => match[1]);
+  await cache.put('/', home);
+  await cache.addAll([...SHELL, ...buildAssets]);
+}
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(SHELL)).then(() => self.skipWaiting()));
+  event.waitUntil(cacheShell().then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', (event) => {
@@ -11,7 +21,7 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET' || new URL(event.request.url).origin !== self.location.origin) return;
-  event.respondWith(caches.match(event.request).then((cached) => cached || fetch(event.request).then((response) => {
+  event.respondWith(caches.match(event.request, { ignoreVary: true }).then((cached) => cached || fetch(event.request).then((response) => {
     if (response.ok) caches.open(CACHE).then((cache) => cache.put(event.request, response.clone()));
     return response;
   }).catch(() => event.request.mode === 'navigate' ? caches.match('/') : undefined)));
