@@ -11,6 +11,7 @@
   --lake: #225f75;
   --persimmon: #a9422a;
   --saffron: #e2aa3b;
+  --focus: #765000;
   --shadow: #b8aa8e;
   --serif: Georgia, "Times New Roman", serif;
   --sans: "Avenir Next", Avenir, "Segoe UI", system-ui, sans-serif;
@@ -33,6 +34,7 @@
   --lake: #74bcd2;
   --persimmon: #f18b70;
   --saffron: #d8aa53;
+  --focus: #d8aa53;
   --shadow: #090a09;
 }
 
@@ -44,7 +46,7 @@ button, a, input, textarea, select { -webkit-tap-highlight-color: transparent; }
 a { color: var(--lake); text-underline-offset: 3px; }
 button { color: inherit; }
 button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible, [tabindex]:focus-visible {
-  outline: 3px solid var(--saffron); outline-offset: 3px;
+  outline: 3px solid var(--focus); outline-offset: 3px;
 }
 .skip-link { position: fixed; z-index: 100; top: 8px; left: 8px; transform: translateY(-160%); background: var(--ink); color: var(--paper); padding: 10px 16px; }
 .skip-link:focus { transform: none; }
@@ -161,7 +163,7 @@ dialog::backdrop { background: color-mix(in srgb, #08100c, transparent 25%); }
 .status-choice { position: relative; }
 .status-choice input { position: absolute; opacity: 0; }
 .status-choice label { display: block; height: 100%; min-height: 84px; padding: 12px; border: 2px solid var(--edge); cursor: pointer; }
-.status-choice input:focus-visible + label { outline: 3px solid var(--saffron); outline-offset: 3px; }
+.status-choice input:focus-visible + label { outline: 3px solid var(--focus); outline-offset: 3px; }
 .status-choice input:checked + label { border-color: var(--ink); background: var(--canvas); box-shadow: 4px 4px 0 var(--shadow); }
 .status-choice strong { display: block; }
 .status-choice small { color: var(--muted); }

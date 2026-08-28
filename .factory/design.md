@@ -20,9 +20,10 @@ Light is the canonical, explicitly painted treatment because paper and pencil ar
 | moss | `#26704D` | `#67C491` | explain / completion |
 | lake | `#225F75` | `#74BCD2` | recognize / orientation |
 | persimmon | `#A9422A` | `#F18B70` | blocked / attention |
-| saffron | `#E2AA3B` | `#D8AA53` | focus and timer tab |
+| saffron | `#E2AA3B` | `#D8AA53` | timer tab and paper accents |
+| focus ochre | `#765000` | `#D8AA53` | keyboard focus ring with ≥3:1 adjacent contrast |
 
-All body combinations meet WCAG AA; states always include labels and shapes, never color alone. Focus is a 3px saffron ring plus ink offset.
+All body combinations meet WCAG AA; states always include labels and shapes, never color alone. Focus is a 3px dark ochre ring in the light treatment and saffron in the dark treatment, retaining the workshop palette while exceeding 3:1 against both canvas and paper.
 
 ## Typography
 

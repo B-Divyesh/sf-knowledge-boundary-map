@@ -19,6 +19,14 @@ test('loads without console or page errors', async ({ page }) => {
   expect(errors).toEqual([]);
 });
 
+test('skip link moves keyboard focus to the main task', async ({ page }) => {
+  await page.evaluate(() => (document.activeElement as HTMLElement)?.blur());
+  await page.keyboard.press('Tab');
+  await expect(page.getByRole('link', { name: 'Skip to your map' })).toBeFocused();
+  await page.keyboard.press('Enter');
+  await expect(page.locator('main')).toBeFocused();
+});
+
 test('starts the complete free experience when local storage is denied', async ({ page }) => {
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
@@ -66,6 +74,42 @@ test('supports legal and upgrade routes in both themes without serious accessibi
   const darkResults = await new AxeBuilder({ page }).analyze();
   expect(darkResults.violations.filter((violation) => ['serious', 'critical'].includes(violation.impact ?? ''))).toEqual([]);
   await expect(page.getByRole('link', { name: 'Buy lifetime studio' })).toHaveAttribute('href', 'https://api.sociobot.in/api/v1/products/knowledge-boundary-map/checkout');
+});
+
+test('light and dark keyboard focus indicators exceed 3 to 1 adjacent contrast', async ({ page }) => {
+  const contrast = (foreground: string, background: string) => {
+    const channels = (color: string) => (color.startsWith('#')
+      ? color.slice(1).match(/.{2}/g)!.map((value) => Number.parseInt(value, 16))
+      : color.match(/[\d.]+/g)!.slice(0, 3).map(Number)).map((value) => {
+      const channel = value / 255;
+      return channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
+    });
+    const luminance = (color: string) => {
+      const [red, green, blue] = channels(color);
+      return 0.2126 * red + 0.7152 * green + 0.0722 * blue;
+    };
+    const values = [luminance(foreground), luminance(background)].sort((a, b) => b - a);
+    return (values[0] + 0.05) / (values[1] + 0.05);
+  };
+
+  for (const theme of ['light', 'dark'] as const) {
+    await page.evaluate((nextTheme) => {
+      document.documentElement.dataset.theme = nextTheme;
+      localStorage.setItem('kbm:theme', nextTheme);
+    }, theme);
+    await page.reload();
+    const colors = await page.getByRole('button', { name: 'Pin your first claim' }).evaluate((button) => {
+      button.focus();
+      const root = getComputedStyle(document.documentElement);
+      return {
+        outline: getComputedStyle(button).outlineColor,
+        canvas: root.getPropertyValue('--canvas').trim(),
+        paper: root.getPropertyValue('--paper').trim(),
+      };
+    });
+    expect(contrast(colors.outline, colors.canvas), `${theme} focus against canvas`).toBeGreaterThanOrEqual(3);
+    expect(contrast(colors.outline, colors.paper), `${theme} focus against paper`).toBeGreaterThanOrEqual(3);
+  }
 });
 
 test('mobile status ledger is keyboard-scrollable and passes axe', async ({ page }) => {
@@ -158,7 +202,8 @@ test('updated service worker runs the real application offline', async ({ contex
   await page.reload();
 
   const cacheEntries = await page.evaluate(async () => {
-    const cache = await caches.open('kbm-shell-v4');
+    const cacheName = (await caches.keys()).find((name) => name.startsWith('kbm-shell-'))!;
+    const cache = await caches.open(cacheName);
     return (await cache.keys()).map((request) => request.url);
   });
   expect(cacheEntries.some((url) => /\/assets\/index-[^/]+\.js$/.test(url))).toBe(true);
@@ -175,4 +220,87 @@ test('updated service worker runs the real application offline', async ({ contex
   await page.reload({ waitUntil: 'domcontentloaded' });
   await expect(page.getByRole('heading', { level: 1, name: 'Find the edge of what you can explain.' })).toBeVisible();
   await expect(page.getByText('You’re offline. Your map still works and stays on this device.')).toBeVisible();
+});
+
+test('an unseen offline return token never unlocks paid controls', async ({ context, page }) => {
+  await page.evaluate(async () => {
+    await navigator.serviceWorker.ready;
+    if (!navigator.serviceWorker.controller) await new Promise<void>((resolve) => navigator.serviceWorker.addEventListener('controllerchange', () => resolve(), { once: true }));
+  });
+  await page.evaluate(() => {
+    localStorage.setItem('kbm:map:v1', JSON.stringify({
+      version: 1,
+      topic: 'Limit test',
+      claims: Array.from({ length: 12 }, (_, index) => ({ id: `claim-${index}`, title: `Claim ${index + 1}` })),
+    }));
+  });
+  await context.setOffline(true);
+  await page.goto('/?license=offline-unverified-regression', { waitUntil: 'domcontentloaded' });
+
+  await expect(page).toHaveURL('/');
+  await expect(page.getByRole('link', { name: 'Lifetime studio' })).toBeVisible();
+  expect(await page.evaluate(() => localStorage.getItem('sb_license_verdict:knowledge-boundary-map'))).toBeNull();
+  await page.keyboard.press('n');
+  await expect(page.getByText('Your free workshop holds 12 claims.')).toBeVisible();
+  await expect(page.locator('#claim-form')).toHaveCount(0);
+
+  await page.route('https://api.sociobot.in/api/v1/products/knowledge-boundary-map/verify?license=offline-unverified-regression', (route) => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({ valid: false, reason: 'invalid', expires_at: null }),
+  }));
+  await context.setOffline(false);
+  await expect(page.getByText('Your saved license is no longer active.')).toBeVisible();
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('sb_license_verdict:knowledge-boundary-map')!))).toMatchObject({
+    token: 'offline-unverified-regression',
+    valid: false,
+  });
+});
+
+test('a cached valid verdict cannot unlock a different return token', async ({ context, page }) => {
+  await page.evaluate(async () => {
+    await navigator.serviceWorker.ready;
+    if (!navigator.serviceWorker.controller) await new Promise<void>((resolve) => navigator.serviceWorker.addEventListener('controllerchange', () => resolve(), { once: true }));
+    localStorage.setItem('sb_license:knowledge-boundary-map', 'previous-token');
+    localStorage.setItem('sb_license_verdict:knowledge-boundary-map', JSON.stringify({ token: 'previous-token', valid: true, checkedAt: Date.now() }));
+  });
+  await context.setOffline(true);
+  await page.goto('/?license=different-token', { waitUntil: 'domcontentloaded' });
+
+  await expect(page).toHaveURL('/');
+  await expect(page.getByRole('link', { name: 'Lifetime studio' })).toBeVisible();
+  expect(await page.evaluate(() => localStorage.getItem('sb_license_verdict:knowledge-boundary-map'))).toBeNull();
+});
+
+test('background revocation immediately removes paid controls rendered from a cached valid verdict', async ({ context, page }) => {
+  const token = 'cached-valid-regression';
+  await page.evaluate(async () => {
+    await navigator.serviceWorker.ready;
+    if (!navigator.serviceWorker.controller) await new Promise<void>((resolve) => navigator.serviceWorker.addEventListener('controllerchange', () => resolve(), { once: true }));
+  });
+  await page.evaluate((license) => {
+    localStorage.setItem('kbm:map:v1', JSON.stringify({
+      version: 1,
+      topic: 'Limit test',
+      claims: Array.from({ length: 12 }, (_, index) => ({ id: `claim-${index}`, title: `Claim ${index + 1}` })),
+    }));
+    localStorage.setItem('sb_license:knowledge-boundary-map', license);
+    localStorage.setItem('sb_license_verdict:knowledge-boundary-map', JSON.stringify({ token: license, valid: true, checkedAt: 0 }));
+  }, token);
+  await context.setOffline(true);
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await expect(page.getByRole('link', { name: 'Studio unlocked' })).toBeVisible();
+  await page.keyboard.press('n');
+  await expect(page.locator('#claim-form')).toHaveCount(1);
+
+  await page.route(`https://api.sociobot.in/api/v1/products/knowledge-boundary-map/verify?license=${token}`, (route) => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({ valid: false, reason: 'revoked', expires_at: null }),
+  }));
+  await context.setOffline(false);
+
+  await expect(page.getByRole('link', { name: 'Lifetime studio' })).toBeVisible();
+  await expect(page.getByText('Your saved license is no longer active.')).toBeVisible();
+  await expect(page.locator('#claim-form')).toHaveCount(0);
 });

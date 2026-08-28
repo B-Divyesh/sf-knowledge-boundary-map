@@ -8,7 +8,7 @@ const VERDICT_KEY = 'sb_license_verdict:knowledge-boundary-map';
 const BILLING_BASE = (import.meta.env.VITE_BILLING_API_BASE || 'https://api.sociobot.in').replace(/\/$/, '');
 const CHECKOUT_URL = `${BILLING_BASE}/api/v1/products/knowledge-boundary-map/checkout`;
 
-type LicenseVerdict = { valid: boolean; checkedAt: number; reason?: string };
+type LicenseVerdict = { token: string; valid: boolean; checkedAt: number; reason?: string };
 
 let storageAvailable = true;
 let map: MapData = loadMap();
@@ -30,6 +30,10 @@ function safeSet(key: string, value: string): boolean {
   try { localStorage.setItem(key, value); return true; } catch { storageAvailable = false; return false; }
 }
 
+function safeRemove(key: string): boolean {
+  try { localStorage.removeItem(key); return true; } catch { storageAvailable = false; return false; }
+}
+
 function loadMap(): MapData {
   try {
     const raw = safeGet(STORAGE_KEY);
@@ -47,12 +51,18 @@ function saveMap(): void {
 function readVerdict(): LicenseVerdict | null {
   try {
     const parsed = JSON.parse(safeGet(VERDICT_KEY) ?? 'null') as LicenseVerdict | null;
-    return parsed && typeof parsed.valid === 'boolean' ? parsed : null;
+    return parsed
+      && typeof parsed.token === 'string'
+      && typeof parsed.valid === 'boolean'
+      && typeof parsed.checkedAt === 'number'
+      && Number.isFinite(parsed.checkedAt)
+      ? parsed
+      : null;
   } catch { return null; }
 }
 
 function isUnlocked(): boolean {
-  return Boolean(licenseToken && licenseVerdict?.valid);
+  return Boolean(licenseToken && licenseVerdict?.token === licenseToken && licenseVerdict.valid);
 }
 
 function escapeHtml(value: string): string {
@@ -203,6 +213,17 @@ function navigate(path: string): void {
 }
 
 function bindCommon(): void {
+  const skipLink = document.querySelector<HTMLAnchorElement>('.skip-link');
+  if (skipLink && !skipLink.dataset.bound) {
+    skipLink.dataset.bound = 'true';
+    skipLink.addEventListener('click', (event) => {
+      event.preventDefault();
+      const main = document.querySelector<HTMLElement>('#main');
+      main?.setAttribute('tabindex', '-1');
+      main?.focus();
+      main?.scrollIntoView();
+    });
+  }
   document.querySelectorAll<HTMLAnchorElement>('[data-route]').forEach((link) => link.addEventListener('click', (event) => { event.preventDefault(); navigate(new URL(link.href).pathname); }));
   document.querySelector('#theme-toggle')?.addEventListener('click', () => {
     const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
@@ -406,20 +427,36 @@ function bindUpgrade(): void {
     const token = String(new FormData(form).get('license') ?? '').trim();
     if (!token) { setErrors('license-errors', ['Paste the license token from your receipt.']); return; }
     const submit = form.querySelector<HTMLButtonElement>('button[type="submit"]')!; submit.disabled = true; submit.textContent = 'Checking…';
-    const valid = await verifyLicense(token, true);
-    if (valid) { licenseToken = token; safeSet(LICENSE_KEY, token); route(); showToast('Studio restored on this browser.'); }
+    const verdict = await requestLicenseVerdict(token, true);
+    if (verdict?.valid) {
+      licenseToken = token; licenseVerdict = verdict;
+      safeSet(LICENSE_KEY, token); safeSet(VERDICT_KEY, JSON.stringify(verdict));
+      route(); showToast('Studio restored on this browser.');
+    }
     else { setErrors('license-errors', [navigator.onLine ? 'That license is not active for this product. Check the token and try again.' : 'You appear to be offline. Connect and try restoring again.']); submit.disabled = false; submit.textContent = 'Verify and restore'; }
   });
 }
 
-async function verifyLicense(token: string, force = false): Promise<boolean> {
-  if (!force && licenseVerdict && Date.now() - licenseVerdict.checkedAt < 86_400_000) return licenseVerdict.valid;
+async function requestLicenseVerdict(token: string, force = false): Promise<LicenseVerdict | null> {
+  const cachedForToken = licenseVerdict?.token === token ? licenseVerdict : null;
+  if (!force && cachedForToken && Date.now() - cachedForToken.checkedAt < 86_400_000) return cachedForToken;
   try {
     const response = await fetch(`${BILLING_BASE}/api/v1/products/knowledge-boundary-map/verify?license=${encodeURIComponent(token)}`, { headers: { Accept: 'application/json' } });
     const result = await response.json() as { valid?: boolean; reason?: string };
-    licenseVerdict = { valid: response.ok && result.valid === true, reason: result.reason, checkedAt: Date.now() };
-    safeSet(VERDICT_KEY, JSON.stringify(licenseVerdict)); return licenseVerdict.valid;
-  } catch { return Boolean(licenseVerdict?.valid); }
+    if (!response.ok || typeof result.valid !== 'boolean') throw new Error('License verification is unavailable.');
+    return { token, valid: result.valid, reason: result.reason, checkedAt: Date.now() };
+  } catch { return cachedForToken; }
+}
+
+async function refreshLicense(force = false): Promise<void> {
+  if (!licenseToken) return;
+  const before = JSON.stringify(licenseVerdict);
+  const verdict = await requestLicenseVerdict(licenseToken, force);
+  if (verdict) {
+    licenseVerdict = verdict;
+    safeSet(VERDICT_KEY, JSON.stringify(verdict));
+  }
+  if (before !== JSON.stringify(licenseVerdict)) route();
 }
 
 function setErrors(id: string, errors: string[]): void {
@@ -446,17 +483,21 @@ function applyTheme(): void {
 
 async function initializeLicense(): Promise<void> {
   const params = new URLSearchParams(location.search);
-  const incoming = params.get('license');
+  const incoming = params.get('license')?.trim();
   if (incoming) {
+    if (licenseVerdict?.token !== incoming) {
+      licenseVerdict = null;
+      safeRemove(VERDICT_KEY);
+    }
     licenseToken = incoming; safeSet(LICENSE_KEY, incoming); params.delete('license');
     history.replaceState({}, '', `${location.pathname}${params.size ? `?${params}` : ''}${location.hash}`);
-    licenseVerdict = { valid: true, checkedAt: 0 }; safeSet(VERDICT_KEY, JSON.stringify(licenseVerdict));
+    route();
   }
-  if (licenseToken) { const before = isUnlocked(); await verifyLicense(licenseToken); if (before !== isUnlocked()) route(); }
+  await refreshLicense();
 }
 
 window.addEventListener('popstate', route);
-window.addEventListener('online', () => { updateOnlineState(); if (licenseToken) void verifyLicense(licenseToken, true); });
+window.addEventListener('online', () => { updateOnlineState(); void refreshLicense(true); });
 window.addEventListener('offline', updateOnlineState);
 window.addEventListener('resize', () => requestAnimationFrame(drawConnections));
 document.addEventListener('keydown', (event) => {
@@ -465,4 +506,4 @@ document.addEventListener('keydown', (event) => {
 });
 
 applyTheme(); route(); void initializeLicense();
-if ('serviceWorker' in navigator && import.meta.env.PROD) window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => undefined));
+if ('serviceWorker' in navigator && import.meta.env.PROD) window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' }).catch(() => undefined));
