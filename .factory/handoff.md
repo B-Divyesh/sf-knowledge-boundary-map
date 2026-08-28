@@ -49,7 +49,11 @@ Final local artifact SHA-256 values before deployment:
 - `sw.js`: `7beefddc0ebdb42a35fb331ef8d9ca046995a3fb03384378520e5e791433dfbe`
 - `staticwebapp.config.json`: `e9ca7c2d73d465df1844339d5e3a784abcee14f43d26f2169dc93a4eb026ab92`
 
-Live deployment, response-header, and byte-identity evidence will be appended immediately after deployment.
+Deployment from repair commit `d94cf70` succeeded (Azure deployment ID `469dae91-f783-4289-a7c3-7c6308ce265b`). The custom domain returned HTTPS 200, and `/privacy`, `/terms`, `/upgrade`, the manifest, service worker, CSS, and JS all returned 200 with the expected content types. Hashed CSS/JS return `public, max-age=31536000, immutable`; `sw.js` returns `public, must-revalidate, max-age=30`.
+
+The live HTML, CSS, JS, and service worker hashes exactly match the local artifact values above. The live HTML response now includes the CSP with `frame-ancestors 'none'`, `X-Frame-Options: DENY`, HSTS, `Referrer-Policy`, `X-Content-Type-Options`, and the restrictive camera/microphone/geolocation permissions policy.
+
+Post-deploy browser verification at the public origin passed with zero console/page errors and only same-origin requests in the free flow. At 390×844, the live populated ledger measured 362/470 px client/scroll width, focused, scrolled 40 px with ArrowRight, and produced zero serious/critical axe findings. The live `kbm-shell-v4` cache contains hashed JS/CSS; after `registration.update()` and network cutoff, the populated application and offline notice both rendered. The factory URL verifier also passed all title/lang/landmark/alt/button/error checks.
 
 ## Known boundaries
 
