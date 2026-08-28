@@ -17,7 +17,7 @@ let storageAvailable = true;
 let selectedClaimId = '';
 let timerId = 0;
 let secondsLeft = 90;
-let lastRemoved: { claim: Claim; index: number } | null = null;
+let lastRemoved: { claim: Claim; index: number; dependentIds: string[] } | null = null;
 let toastTimer = 0;
 
 const app = document.querySelector<HTMLDivElement>('#app')!;
@@ -333,13 +333,16 @@ function removeSelected(): void {
   const index = map.claims.findIndex((claim) => claim.id === selectedClaimId);
   const claim = map.claims[index];
   if (!claim || !window.confirm(`Remove “${claim.title}”? Claims that depend on it will keep working but lose that connection.`)) return;
-  lastRemoved = { claim, index }; map.claims.splice(index, 1); map.claims.forEach((item) => item.prerequisiteIds = item.prerequisiteIds.filter((id) => id !== claim.id)); saveMap();
+  lastRemoved = { claim, index, dependentIds: map.claims.filter((item) => item.prerequisiteIds.includes(claim.id)).map((item) => item.id) };
+  map.claims.splice(index, 1); map.claims.forEach((item) => item.prerequisiteIds = item.prerequisiteIds.filter((id) => id !== claim.id)); saveMap();
   document.querySelector<HTMLDialogElement>('#rehearsal-dialog')?.close(); selectedClaimId = ''; route(); showToast('Claim removed.', 'Undo', undoRemove);
 }
 
 function undoRemove(): void {
   if (!lastRemoved) return;
-  map.claims.splice(lastRemoved.index, 0, lastRemoved.claim); saveMap(); lastRemoved = null; route(); showToast('Claim restored.');
+  map.claims.splice(lastRemoved.index, 0, lastRemoved.claim);
+  map.claims.forEach((item) => { if (lastRemoved!.dependentIds.includes(item.id)) item.prerequisiteIds.push(lastRemoved!.claim.id); });
+  saveMap(); lastRemoved = null; route(); showToast('Claim and its connections restored.');
 }
 
 function bindExport(): void {

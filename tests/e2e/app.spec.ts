@@ -7,6 +7,18 @@ test.beforeEach(async ({ page }) => {
   await page.reload();
 });
 
+test('loads without console or page errors', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('console', (message) => { if (message.type() === 'error') errors.push(message.text()); });
+  page.on('pageerror', (error) => errors.push(error.message));
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Try a three-claim example' }).click();
+  await page.getByRole('button', { name: /Random assignment/ }).focus();
+  await page.keyboard.press('ArrowLeft');
+  await expect(page.getByRole('button', { name: /^Not rehearsed A confounder/ })).toBeFocused();
+  expect(errors).toEqual([]);
+});
+
 test('creates, rehearses, and persists a claim', async ({ page }) => {
   await page.getByRole('button', { name: 'Pin your first claim' }).click();
   await page.getByLabel('Claim *').fill('Mass is conserved in a closed chemical reaction');
