@@ -66,14 +66,34 @@ export function sanitizeMap(value: unknown): MapData {
   if (!value || typeof value !== 'object') throw new Error('That file does not contain a boundary map.');
   const source = value as Partial<MapData>;
   if (source.version !== 1 || !Array.isArray(source.claims)) throw new Error('This map format is not supported.');
-  const claims = source.claims.map((item) => {
+  const claims = source.claims.map((item, claimIndex) => {
     if (!item || typeof item !== 'object') throw new Error('One claim in the file is invalid.');
     const claim = item as Partial<Claim>;
     if (typeof claim.id !== 'string' || typeof claim.title !== 'string' || !claim.title.trim()) throw new Error('One claim is missing its title.');
     const status: ClaimStatus = ['untested', 'explain', 'recognize', 'blocked'].includes(claim.status ?? '') ? claim.status as ClaimStatus : 'untested';
+    const title = claim.title.trim().slice(0, 160);
+    const rehearsals = Array.isArray(claim.rehearsals) ? claim.rehearsals.map((item, rehearsalIndex): Rehearsal => {
+      const rehearsal = item as Partial<Rehearsal> | null;
+      const validStatus = rehearsal && ['untested', 'explain', 'recognize', 'blocked'].includes(rehearsal.status ?? '');
+      const validDate = rehearsal && typeof rehearsal.at === 'string' && !Number.isNaN(Date.parse(rehearsal.at));
+      const validText = rehearsal
+        && typeof rehearsal.teachBack === 'string'
+        && typeof rehearsal.counterexample === 'string'
+        && typeof rehearsal.nextProbe === 'string';
+      if (!rehearsal || typeof rehearsal !== 'object' || !validStatus || !validDate || !validText) {
+        throw new Error(`Rehearsal ${rehearsalIndex + 1} for “${title || `claim ${claimIndex + 1}`}” is damaged. Choose an unedited Knowledge Boundary Map JSON export and try again.`);
+      }
+      return {
+        at: rehearsal.at!,
+        status: rehearsal.status as ClaimStatus,
+        teachBack: rehearsal.teachBack!.slice(0, 5000),
+        counterexample: rehearsal.counterexample!.slice(0, 2000),
+        nextProbe: rehearsal.nextProbe!.slice(0, 1000),
+      };
+    }) : [];
     return {
       id: claim.id,
-      title: claim.title.trim().slice(0, 160),
+      title,
       context: typeof claim.context === 'string' ? claim.context.slice(0, 600) : '',
       prerequisiteIds: Array.isArray(claim.prerequisiteIds) ? claim.prerequisiteIds.filter((id): id is string => typeof id === 'string') : [],
       status,
@@ -82,7 +102,7 @@ export function sanitizeMap(value: unknown): MapData {
       nextProbe: typeof claim.nextProbe === 'string' ? claim.nextProbe.slice(0, 1000) : '',
       createdAt: typeof claim.createdAt === 'string' ? claim.createdAt : new Date().toISOString(),
       updatedAt: typeof claim.updatedAt === 'string' ? claim.updatedAt : new Date().toISOString(),
-      rehearsals: Array.isArray(claim.rehearsals) ? claim.rehearsals.filter((r): r is Rehearsal => Boolean(r && typeof r === 'object')) : [],
+      rehearsals,
     };
   });
   const ids = new Set(claims.map((claim) => claim.id));

@@ -10,10 +10,10 @@ const CHECKOUT_URL = `${BILLING_BASE}/api/v1/products/knowledge-boundary-map/che
 
 type LicenseVerdict = { valid: boolean; checkedAt: number; reason?: string };
 
+let storageAvailable = true;
 let map: MapData = loadMap();
 let licenseToken = safeGet(LICENSE_KEY) ?? '';
 let licenseVerdict = readVerdict();
-let storageAvailable = true;
 let selectedClaimId = '';
 let timerId = 0;
 let secondsLeft = 90;
@@ -32,7 +32,7 @@ function safeSet(key: string, value: string): boolean {
 
 function loadMap(): MapData {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = safeGet(STORAGE_KEY);
     return raw ? sanitizeMap(JSON.parse(raw)) : structuredClone(EMPTY_MAP);
   } catch {
     return structuredClone(EMPTY_MAP);
@@ -46,7 +46,7 @@ function saveMap(): void {
 
 function readVerdict(): LicenseVerdict | null {
   try {
-    const parsed = JSON.parse(localStorage.getItem(VERDICT_KEY) ?? 'null') as LicenseVerdict | null;
+    const parsed = JSON.parse(safeGet(VERDICT_KEY) ?? 'null') as LicenseVerdict | null;
     return parsed && typeof parsed.valid === 'boolean' ? parsed : null;
   } catch { return null; }
 }
@@ -90,7 +90,7 @@ function footer(): string {
 }
 
 function layout(content: string): string {
-  return `<div class="shell">${header()}${content}${footer()}<div class="toast" id="toast" role="status" aria-live="polite"><span id="toast-message"></span><button type="button" id="toast-action" hidden>Undo</button></div></div>`;
+  return `<div class="shell">${header()}${!storageAvailable ? '<p class="license-note storage-warning" role="alert">Local storage is unavailable. Your changes may not survive a refresh; export a copy before leaving.</p>' : ''}${content}${footer()}<div class="toast" id="toast" role="status" aria-live="polite"><span id="toast-message"></span><button type="button" id="toast-action" hidden>Undo</button></div></div>`;
 }
 
 function heroPage(): string {
@@ -107,7 +107,6 @@ function mapPage(): string {
   const counts = (['explain', 'recognize', 'blocked', 'untested'] as ClaimStatus[]).map((status) => [status, map.claims.filter((claim) => claim.status === status).length] as const);
   const limitText = isUnlocked() ? `${map.claims.length} claims · Studio unlocked` : `${map.claims.length} of ${FREE_CLAIM_LIMIT} free claims`;
   return layout(`<main class="site-main" id="main">
-    ${!storageAvailable ? '<p class="license-note" role="alert">Local storage is unavailable. Your changes may not survive a refresh; export a copy before leaving.</p>' : ''}
     <div class="map-header"><div><p class="eyebrow">Boundary workshop</p><h1>Your explanation map</h1><label for="topic" class="visually-hidden">Topic name</label><input id="topic" class="topic-input" type="text" maxlength="120" value="${escapeHtml(map.topic)}" placeholder="Name this topic (optional)"></div>
     <div class="button-row"><button class="button primary" id="new-claim" type="button">${icon('plus')} Pin a claim</button><button class="button quiet" id="export-menu" type="button">${icon('download')} Export</button></div></div>
     ${licenseVerdict && !licenseVerdict.valid && licenseToken ? `<p class="license-note">Your saved license is no longer active. The free map still works. <a href="${CHECKOUT_URL}">Get a new license</a>.</p>` : ''}
@@ -356,7 +355,14 @@ function bindExport(): void {
       const incoming = sanitizeMap(JSON.parse(await file.text()));
       if (!window.confirm(`Replace this map with “${incoming.topic || 'Untitled topic'}” and its ${incoming.claims.length} claims? Export first if you need a backup.`)) return;
       map = incoming; saveMap(); document.querySelector<HTMLDialogElement>('#export-dialog')?.close(); route(); showToast('Map imported.');
-    } catch (error) { setErrors('import-errors', [error instanceof Error ? error.message : 'That file could not be read.']); }
+    } catch (error) {
+      const message = error instanceof SyntaxError
+        ? 'This file is not valid JSON. Choose a Knowledge Boundary Map JSON export and try again.'
+        : error instanceof Error
+          ? error.message
+          : 'This file could not be read. Choose a Knowledge Boundary Map JSON export and try again.';
+      setErrors('import-errors', [message]);
+    }
   });
 }
 
