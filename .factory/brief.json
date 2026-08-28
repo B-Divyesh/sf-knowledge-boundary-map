@@ -1,0 +1,11 @@
+{
+  "slug": "knowledge-boundary-map",
+  "title": "Knowledge Boundary Map",
+  "territory": "utilities",
+  "user": "A self-learner who has consumed a topic but needs to distinguish recognition from an explanation they can actually produce.",
+  "smallest_useful_product": "Static web app with a node map: add a claim and prerequisites, do a 90-second teach-back, then mark ‘explain’, ‘recognize’, or ‘blocked’ with a next probe.",
+  "success_measure": "At least 50% of activated users create five claims and revisit one previously overconfident claim within seven days.",
+  "artifact_class": "static-web",
+  "monetization": "one-time",
+  "constraints": "Private-by-default browser storage; clearly label self-assessments; accessible diagram navigation; no claim of objectively measuring intelligence."
+}
