@@ -1,5 +1,5 @@
 const CACHE = 'kbm-shell-__KBM_BUILD_ID__';
-const SHELL = ['/demo', '/privacy', '/terms', '/upgrade', '/manifest.webmanifest', '/favicon.svg', '/assets/boundary-diorama.avif', '/assets/boundary-diorama.webp'];
+const SHELL = ['/demo', '/privacy', '/terms', '/upgrade', '/404.html', '/404.css', '/manifest.webmanifest', '/favicon.svg', '/apple-touch-icon.png', '/assets/boundary-diorama.avif', '/assets/boundary-diorama.webp'];
 
 async function cacheShell() {
   const cache = await caches.open(CACHE);
@@ -25,7 +25,10 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(fetch(event.request).then((response) => {
       if (response.ok) caches.open(CACHE).then((cache) => cache.put('/', response.clone()));
       return response;
-    }).catch(() => caches.match(event.request, { ignoreVary: true }).then((cached) => cached || caches.match('/'))));
+    }).catch(() => {
+      const path = new URL(event.request.url).pathname;
+      return caches.match(event.request, { ignoreVary: true }).then((cached) => cached || caches.match(path) || caches.match('/404.html') || caches.match('/'));
+    }));
     return;
   }
   event.respondWith(caches.match(event.request, { ignoreVary: true }).then((cached) => cached || fetch(event.request).then((response) => {

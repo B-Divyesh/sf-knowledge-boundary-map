@@ -28,6 +28,23 @@ test('skip link moves keyboard focus to the main task', async ({ page }) => {
   await expect(page.locator('main')).toBeFocused();
 });
 
+test('@finding:route-focus Back restores the page heading and prior scroll position', async ({ page }) => {
+  await page.evaluate(() => window.scrollTo(0, 420));
+  const before = await page.evaluate(() => window.scrollY);
+  await page.evaluate(() => document.querySelector<HTMLAnchorElement>('a[data-route][href="/privacy"]')?.click());
+  await expect(page.getByRole('heading', { level: 1, name: 'Privacy' })).toBeFocused();
+  await page.goBack();
+  await expect(page.getByRole('heading', { level: 1, name: 'Check what you can explain.' })).toBeFocused();
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThanOrEqual(before - 2);
+});
+
+test('@finding:not-found app fallback shows a useful not-found screen', async ({ page }) => {
+  await page.goto('/this-route-should-not-exist-qa');
+  await expect(page).toHaveTitle('Page not found — Knowledge Boundary Map');
+  await expect(page.getByRole('heading', { level: 1, name: 'That page is not in this map.' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Go to your map' })).toBeVisible();
+});
+
 test('starts the complete free experience when local storage is denied', async ({ page }) => {
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
@@ -77,18 +94,25 @@ test('@claim:demo-sandbox loads sample data in a separate namespace and discards
   expect(await page.evaluate(() => localStorage.getItem('demo:kbm:map:v1'))).toBeNull();
 });
 
-test('@claim:local-only keeps normal learning activity on the current origin', async ({ page }) => {
+test('@claim:local-only keeps initial load and normal learning activity on the current origin', async ({ browser, baseURL }) => {
+  const context = await browser.newContext({ serviceWorkers: 'allow' });
+  const page = await context.newPage();
   const origins = new Set<string>();
   page.on('request', (request) => origins.add(new URL(request.url()).origin));
+  try {
+    await page.goto(baseURL!);
+    await expect(page.getByText(/No account, analytics, trackers, third-party fonts, or runtime CDN scripts are used/)).toBeVisible();
+    await page.getByRole('button', { name: 'Try it with sample data' }).click();
+    await page.getByRole('button', { name: /^Not rehearsed A correlation does not by itself show causation/ }).click();
+    await page.getByLabel('Teach it back from memory *').fill('Correlation can reflect a third variable or a shared trend.');
+    await page.getByLabel('Recognize only').check();
+    await page.getByLabel('Next probe *').fill('Draw a causal graph with a confounder.');
+    await page.getByRole('button', { name: 'Save self-assessment' }).click();
 
-  await page.getByRole('button', { name: 'Try it with sample data' }).click();
-  await page.getByRole('button', { name: /^Not rehearsed A correlation does not by itself show causation/ }).click();
-  await page.getByLabel('Teach it back from memory *').fill('Correlation can reflect a third variable or a shared trend.');
-  await page.getByLabel('Recognize only').check();
-  await page.getByLabel('Next probe *').fill('Draw a causal graph with a confounder.');
-  await page.getByRole('button', { name: 'Save self-assessment' }).click();
-
-  expect([...origins]).toEqual([]);
+    expect([...origins]).toEqual([new URL(baseURL!).origin]);
+  } finally {
+    await context.close();
+  }
 });
 
 test('@claim:csv-export downloads all sample claims as a CSV file', async ({ page }) => {
@@ -105,6 +129,107 @@ test('@claim:csv-export downloads all sample claims as a CSV file', async ({ pag
   expect(csv).toContain('A correlation does not by itself show causation');
   expect(csv).toContain('A confounder can affect both measured variables');
   expect(csv).toContain('Random assignment reduces systematic confounding');
+});
+
+test('@claim:json-restore exports and restores complete rehearsed map data', async ({ page }) => {
+  await page.getByRole('button', { name: 'Pin your first claim' }).click();
+  await page.getByLabel('Claim *').fill('A closed system conserves mass');
+  await page.getByRole('button', { name: 'Pin this claim' }).click();
+  await page.getByRole('button', { name: /A closed system conserves mass/ }).click();
+  await page.getByLabel('Teach it back from memory *').fill('Atoms move between forms without appearing or disappearing.');
+  await page.getByLabel('Counterexample or boundary').fill('Open systems can exchange matter.');
+  await page.getByLabel('Can explain').check();
+  await page.getByLabel('Next probe *').fill('Balance an unfamiliar reaction.');
+  await page.getByRole('button', { name: 'Save self-assessment' }).click();
+  await page.getByRole('button', { name: 'Export' }).click();
+  const downloadPromise = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Download JSON' }).click();
+  const exported = await readFile((await (await downloadPromise).path())!, 'utf8');
+
+  await page.evaluate(() => localStorage.setItem('kbm:map:v1', JSON.stringify({ version: 1, topic: '', claims: [] })));
+  await page.reload();
+  await page.getByRole('button', { name: 'Pin your first claim' }).click();
+  await page.getByLabel('Claim *').fill('Temporary claim before import');
+  await page.getByRole('button', { name: 'Pin this claim' }).click();
+  await page.getByRole('button', { name: 'Export' }).click();
+  page.once('dialog', (dialog) => dialog.accept());
+  await page.locator('#import-file').setInputFiles({ name: 'map.json', mimeType: 'application/json', buffer: Buffer.from(exported) });
+
+  await expect(page.getByRole('button', { name: /A closed system conserves mass/ })).toBeVisible();
+  await page.getByRole('button', { name: /A closed system conserves mass/ }).click();
+  await expect(page.getByLabel('Next probe *')).toHaveValue('Balance an unfamiliar reaction.');
+  await expect(page.getByText('Can explain', { exact: true }).first()).toBeVisible();
+});
+
+test('@claim:keyboard-dialog opens the map by keyboard and restores invoking focus on close', async ({ page }) => {
+  await page.getByRole('button', { name: 'Try it with sample data' }).click();
+  const firstClaim = page.getByRole('button', { name: /^Not rehearsed A correlation does not by itself show causation/ });
+  await firstClaim.focus();
+  await page.keyboard.press('ArrowRight');
+  await expect(page.getByRole('button', { name: /^Not rehearsed A confounder/ })).toBeFocused();
+  await page.keyboard.press('Enter');
+  await expect(page.getByRole('button', { name: 'Start 90 seconds' })).toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('button', { name: /^Not rehearsed A confounder/ })).toBeFocused();
+});
+
+test('@claim:free-workshop keeps rehearsal available and stops at the twelfth claim', async ({ page }) => {
+  await page.getByRole('button', { name: 'Try it with sample data' }).click();
+  await page.getByRole('button', { name: /^Not rehearsed A correlation/ }).click();
+  await page.getByLabel('Teach it back from memory *').fill('Correlation can result from a common cause.');
+  await page.getByLabel('Recognize only').check();
+  await page.getByLabel('Next probe *').fill('Draw a common-cause graph.');
+  await page.getByRole('button', { name: 'Save self-assessment' }).click();
+  await page.evaluate(() => {
+    const now = new Date().toISOString();
+    localStorage.setItem('demo:kbm:map:v1', JSON.stringify({ version: 1, topic: 'Limit', claims: Array.from({ length: 12 }, (_, index) => ({ id: `claim-${index}`, title: `Claim ${index + 1}`, context: '', prerequisiteIds: [], status: 'untested', teachBack: '', counterexample: '', nextProbe: '', createdAt: now, updatedAt: now, rehearsals: [] })) }));
+  });
+  await page.reload();
+  await page.keyboard.press('n');
+  await expect(page.getByText('Your free workshop holds 12 claims.')).toBeVisible();
+  await expect(page.getByText('Export is always free.')).toBeVisible();
+});
+
+test('@claim:self-assessment-label explains the product boundary before a learner records a result', async ({ page }) => {
+  await expect(page.getByText('It records your self-assessment. It does not fact-check claims or measure intelligence.')).toBeVisible();
+  await page.getByRole('button', { name: 'Try it with sample data' }).click();
+  await page.getByRole('button', { name: /^Not rehearsed A correlation/ }).click();
+  await expect(page.getByText('This is a self-assessment, not an objective score.')).toBeVisible();
+});
+
+test('@claim:studio-features removes the free claim limit and shows full rehearsal history for a cached valid license', async ({ page }) => {
+  await page.evaluate(() => {
+    const now = new Date().toISOString();
+    const rehearsals = [
+      { at: '2026-08-28T00:00:00.000Z', status: 'recognize', teachBack: 'First try', counterexample: '', nextProbe: 'Try a new example.' },
+      { at: '2026-08-29T00:00:00.000Z', status: 'explain', teachBack: 'Second try', counterexample: 'A boundary', nextProbe: 'Test a counterexample.' },
+    ];
+    localStorage.setItem('sb_license:knowledge-boundary-map', 'cached-studio');
+    localStorage.setItem('sb_license_verdict:knowledge-boundary-map', JSON.stringify({ token: 'cached-studio', valid: true, checkedAt: Date.now() }));
+    localStorage.setItem('kbm:map:v1', JSON.stringify({ version: 1, topic: 'Studio', claims: Array.from({ length: 12 }, (_, index) => ({ id: `claim-${index}`, title: `Claim ${index + 1}`, context: '', prerequisiteIds: [], status: index === 0 ? 'explain' : 'untested', teachBack: index === 0 ? 'Second try' : '', counterexample: index === 0 ? 'A boundary' : '', nextProbe: index === 0 ? 'Test a counterexample.' : '', createdAt: now, updatedAt: now, rehearsals: index === 0 ? rehearsals : [] })) }));
+  });
+  await page.reload();
+  await page.keyboard.press('n');
+  await expect(page.getByRole('button', { name: 'Pin this claim' })).toBeVisible();
+  await page.keyboard.press('Escape');
+  await page.getByRole('button', { name: /^Can explain Claim 1/ }).click();
+  await expect(page.getByRole('heading', { name: /Rehearsal history/ })).toBeVisible();
+  await page.locator('.history details').nth(0).locator('summary').click();
+  await page.locator('.history details').nth(1).locator('summary').click();
+  await expect(page.locator('.history p').filter({ hasText: 'First try' })).toBeVisible();
+  await expect(page.locator('.history p').filter({ hasText: 'Second try' })).toBeVisible();
+});
+
+test('@claim:studio-price-checkout verifies the production catalog price and hosted checkout redirect', async () => {
+  const base = (process.env.BILLING_API_BASE ?? 'https://api.sociobot.in').replace(/\/$/, '');
+  const checkout = `${base}/api/v1/products/knowledge-boundary-map/checkout`;
+  const catalogResponse = await fetch(`${base}/api/v1/products`);
+  expect(catalogResponse.ok).toBe(true);
+  const catalog = await catalogResponse.json() as { data?: Array<{ slug: string; price_minor: number; currency: string; checkout_url: string }> };
+  expect(catalog.data?.find((entry) => entry.slug === 'knowledge-boundary-map')).toMatchObject({ price_minor: 1200, currency: 'USD', checkout_url: checkout });
+  const checkoutResponse = await fetch(checkout, { redirect: 'manual' });
+  expect([301, 302, 303, 307, 308]).toContain(checkoutResponse.status);
+  expect(checkoutResponse.headers.get('location')).toBeTruthy();
 });
 
 test('supports legal and upgrade routes in both themes without serious accessibility violations', async ({ page }) => {

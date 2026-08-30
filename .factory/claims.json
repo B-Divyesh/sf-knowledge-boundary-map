@@ -1,37 +1,72 @@
 [
   {
     "id": "demo-sandbox",
-    "claim": "Try it with sample data without touching your real map",
-    "where": "landing action and demo banner",
+    "claim": "Try the causal-inference sample without touching your real map",
+    "where": "landing action, demo banner, README",
     "test": "npm run test:e2e -- --grep @claim:demo-sandbox",
-    "sandbox": "fresh browser context; load the sample, inspect the demo storage namespace, then start for real and confirm the real map is empty"
+    "sandbox": "fresh browser context; load the sample, inspect demo storage, then start for real and confirm the real map is empty"
   },
   {
     "id": "local-only",
-    "claim": "Your map stays in this browser unless you export it",
+    "claim": "Your map stays in this browser unless you export it; no account, analytics, trackers, third-party fonts, or runtime CDN scripts are used",
     "where": "landing facts, privacy notice, README",
     "test": "npm run test:e2e -- --grep @claim:local-only",
-    "sandbox": "fresh browser context; create and rehearse a sample claim while recording every request origin"
+    "sandbox": "fresh browser context attaches a request observer before first navigation, completes a demo rehearsal, and asserts every request is same-origin"
   },
   {
     "id": "offline-reload",
     "claim": "Works offline after your first visit",
     "where": "landing facts, README",
     "test": "npm run test:e2e -- --grep @claim:offline-reload",
-    "sandbox": "a dedicated browser context visits the production preview, waits for service-worker control, goes offline, and reloads"
+    "sandbox": "dedicated browser context visits the production preview, waits for service-worker control, goes offline, and reloads"
   },
   {
     "id": "csv-export",
     "claim": "Exports your map as CSV",
-    "where": "Export dialog, README",
+    "where": "export dialog, README",
     "test": "npm run test:e2e -- --grep @claim:csv-export",
-    "sandbox": "fresh browser context; open the shipped sample and assert the downloaded CSV header and three sample rows"
+    "sandbox": "fresh browser context opens the shipped sample and asserts the downloaded CSV header and three sample rows"
+  },
+  {
+    "id": "json-restore",
+    "claim": "JSON export keeps the full map and can be restored here",
+    "where": "export dialog, README",
+    "test": "npm run test:e2e -- --grep @claim:json-restore",
+    "sandbox": "fresh browser context exports a rehearsed claim, imports that JSON after confirmation, and asserts the topic, result, and next probe return"
+  },
+  {
+    "id": "keyboard-dialog",
+    "claim": "The claim map and rehearsal dialog work with a keyboard",
+    "where": "map instructions, README",
+    "test": "npm run test:e2e -- --grep @claim:keyboard-dialog",
+    "sandbox": "fresh browser context uses arrows and Enter to open a rehearsal, then Escape and asserts focus returns to the invoking claim"
+  },
+  {
+    "id": "free-workshop",
+    "claim": "The free workshop includes 12 claims and the complete rehearsal flow",
+    "where": "landing facts, upgrade page, terms, README",
+    "test": "npm run test:e2e -- --grep @claim:free-workshop",
+    "sandbox": "fresh browser context completes a rehearsal, seeds the twelfth valid claim, and asserts the thirteenth claim opens the clear free-limit notice"
+  },
+  {
+    "id": "self-assessment-label",
+    "claim": "The map records self-assessments and does not measure intelligence",
+    "where": "landing page, rehearsal dialog, terms",
+    "test": "npm run test:e2e -- --grep @claim:self-assessment-label",
+    "sandbox": "fresh browser context opens a sample rehearsal and asserts the self-assessment explanation and non-scoring language are visible"
+  },
+  {
+    "id": "studio-features",
+    "claim": "Studio adds unlimited claims and full rehearsal history",
+    "where": "landing page, upgrade page, README",
+    "test": "npm run test:e2e -- --grep @claim:studio-features",
+    "sandbox": "fresh browser context uses a cached valid Studio verdict, opens a thirteenth-claim form, and asserts two rehearsal records are shown"
   },
   {
     "id": "studio-price-checkout",
     "claim": "Studio is a $12 USD one-time purchase",
     "where": "landing facts, upgrade page, terms",
-    "test": "npm run test:billing",
-    "sandbox": "production billing catalog contains this slug at 1200 USD cents and its checkout endpoint returns a hosted-checkout redirect"
+    "test": "npm run test:e2e -- --grep @claim:studio-price-checkout",
+    "sandbox": "production catalog contains this slug at 1200 USD cents and its checkout endpoint returns a hosted-checkout redirect"
   }
 ]

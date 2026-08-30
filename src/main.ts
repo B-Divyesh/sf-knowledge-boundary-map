@@ -7,8 +7,11 @@ const LICENSE_KEY = 'sb_license:knowledge-boundary-map';
 const VERDICT_KEY = 'sb_license_verdict:knowledge-boundary-map';
 const BILLING_BASE = (import.meta.env.VITE_BILLING_API_BASE || 'https://api.sociobot.in').replace(/\/$/, '');
 const CHECKOUT_URL = `${BILLING_BASE}/api/v1/products/knowledge-boundary-map/checkout`;
+const BUILD_ID = import.meta.env.VITE_BUILD_ID || 'repair-5';
 
 type LicenseVerdict = { token: string; valid: boolean; checkedAt: number; reason?: string };
+type LicenseCheck = { verdict: LicenseVerdict | null; unavailable: boolean };
+type RouteOptions = { scroll?: 'top' | { x: number; y: number }; focusHeading?: boolean };
 
 let storageAvailable = true;
 let demoMode = isDemoLocation();
@@ -20,6 +23,8 @@ let timerId = 0;
 let secondsLeft = 90;
 let lastRemoved: { claim: Claim; index: number; dependentIds: string[] } | null = null;
 let toastTimer = 0;
+let rehearsalReturnFocusId = '';
+let licenseServiceUnavailable = false;
 
 const app = document.querySelector<HTMLDivElement>('#app')!;
 
@@ -118,6 +123,7 @@ function header(): string {
     <a class="brand" href="${routeHref('/')}" data-route aria-label="Knowledge Boundary Map home"><span class="brand-mark" aria-hidden="true">↗</span><span>Knowledge Boundary Map</span></a>
     <nav class="header-actions" aria-label="Primary navigation">
       <a class="nav-link" href="${routeHref('/demo')}" data-route>Demo</a>
+      <a class="nav-link" href="${routeHref('/privacy')}" data-route>Privacy</a>
       <a class="nav-link" href="${routeHref('/upgrade')}" data-route>${isUnlocked() ? 'Studio unlocked' : 'Lifetime studio'}</a>
       <button class="icon-button" id="theme-toggle" type="button" aria-label="Use ${dark ? 'light' : 'dark'} theme">${icon(dark ? 'sun' : 'moon')}</button>
     </nav>
@@ -125,7 +131,7 @@ function header(): string {
 }
 
 function footer(): string {
-  return `<footer class="site-footer"><span>Private by default · Stored in this browser · No account</span><nav class="footer-links" aria-label="Legal"><a href="${routeHref('/privacy')}" data-route>Privacy</a><a href="${routeHref('/terms')}" data-route>Terms</a><a href="https://github.com/B-Divyesh/sf-knowledge-boundary-map" rel="noreferrer">Source</a></nav><span>Original AI-generated paper artwork · <a href="${routeHref('/privacy')}" data-route>details</a></span></footer>`;
+  return `<footer class="site-footer"><span>Private map practice for self-learners</span><nav class="footer-links" aria-label="Legal"><a href="${routeHref('/privacy')}" data-route>Privacy</a><a href="${routeHref('/terms')}" data-route>Terms</a><a href="https://github.com/B-Divyesh/sf-knowledge-boundary-map" rel="noreferrer">Source</a></nav><span>Built by Param Factory · build ${escapeHtml(BUILD_ID)}</span></footer>`;
 }
 
 function layout(content: string): string {
@@ -140,7 +146,12 @@ function heroPage(): string {
     <div class="hero-actions"><button class="button primary" id="load-example" type="button">Try it with sample data</button><button class="button quiet" id="start-map" type="button">${icon('plus')} Pin your first claim</button></div>
     <ul class="hero-facts"><li>${icon('lock')} <span>Private: stored in this browser.</span></li><li>Offline: works after your first visit.</li><li>Free: 12 claims; Studio is $12 once.</li></ul></div>
     <figure class="hero-art"><picture><source srcset="/assets/boundary-diorama.avif" type="image/avif"><source srcset="/assets/boundary-diorama.webp" type="image/webp"><img src="/assets/boundary-diorama.webp" width="1152" height="768" fetchpriority="high" decoding="async" alt="Layered paper hills form a path from blue fog past an orange obstacle toward a clear golden marker."></picture><figcaption>Use the map to choose what to study next, not to score your intelligence.</figcaption></figure>
-  </section>${claimDialog()}</main>`);
+  </section>
+  <section class="landing-section preview-section" aria-labelledby="preview-title"><div><p class="eyebrow">Live preview</p><h2 id="preview-title">See the boundary before you start.</h2><p>Each paper slip records one claim, its prerequisites, and your latest self-assessment.</p></div><ol class="preview-map" aria-label="Sample claim map"><li><strong>Correlation is not causation</strong><span>Not rehearsed</span></li><li><strong>A confounder affects both variables</strong><span>Needs: correlation</span></li><li><strong>Random assignment reduces confounding</strong><span>Needs: both earlier claims</span></li></ol></section>
+  <section class="landing-section how-section" aria-labelledby="how-title"><p class="eyebrow">How it works</p><h2 id="how-title">Find the next question to study.</h2><ol class="steps-list"><li><strong>Pin a claim.</strong><span>Start with something that feels familiar.</span></li><li><strong>Teach it back.</strong><span>Write what you can produce without notes.</span></li><li><strong>Choose a next probe.</strong><span>Record the example or prerequisite to test next.</span></li></ol></section>
+  <section class="landing-section limits-section" aria-labelledby="limits-title"><div><p class="eyebrow">Privacy and limits</p><h2 id="limits-title">Your assessment stays yours.</h2><p>Your map stays in this browser unless you export it. No account, analytics, trackers, third-party fonts, or runtime CDN scripts are used.</p></div><div><h3>What this does not do</h3><p>It records your self-assessment. It does not fact-check claims or measure intelligence.</p></div></section>
+  <section class="landing-section studio-section" aria-labelledby="studio-title"><div><p class="eyebrow">Optional Studio</p><h2 id="studio-title">Keep every claim in one map.</h2><p>Studio is a $12 USD one-time purchase. It adds unlimited claims and full rehearsal history.</p></div><a class="button primary" href="${routeHref('/upgrade')}" data-route>See Studio details</a></section>
+  ${claimDialog()}</main>`);
 }
 
 function mapPage(): string {
@@ -149,7 +160,8 @@ function mapPage(): string {
   return layout(`<main class="site-main" id="main">
     <div class="map-header"><div><p class="eyebrow">Boundary workshop</p><h1>Your explanation map</h1><label for="topic" class="visually-hidden">Topic name</label><input id="topic" class="topic-input" type="text" maxlength="120" value="${escapeHtml(map.topic)}" placeholder="Name this topic (optional)"></div>
     <div class="button-row"><button class="button primary" id="new-claim" type="button">${icon('plus')} Pin a claim</button><button class="button quiet" id="export-menu" type="button">${icon('download')} Export</button></div></div>
-    ${licenseVerdict && !licenseVerdict.valid && licenseToken ? `<p class="license-note">Your saved license is no longer active. The free map still works. <a href="${CHECKOUT_URL}">Get a new license</a>.</p>` : ''}
+    ${licenseServiceUnavailable && licenseToken ? '<p class="license-note" role="status">License verification is unavailable right now. Your existing map still works; try again later.</p>' : ''}
+    ${licenseVerdict && !licenseVerdict.valid && licenseToken && !licenseServiceUnavailable ? `<p class="license-note">Your saved license is no longer active. The free map still works. <a href="${CHECKOUT_URL}">Get a new license</a>.</p>` : ''}
     <p class="visually-hidden" id="boundary-ledger-help">This summary scrolls horizontally on narrow screens. Focus it, then use the Left and Right Arrow keys to review every status.</p>
     <ul class="boundary-ledger" tabindex="0" aria-label="Self-assessed boundary summary" aria-describedby="boundary-ledger-help">${counts.map(([status, count]) => `<li class="ledger-item ${status}"><strong>${count}</strong><span>${statusLabel(status)}</span></li>`).join('')}</ul>
     <div class="workspace"><section class="map-section" aria-labelledby="claim-map-title"><div class="section-heading"><h2 id="claim-map-title">Claim map</h2><span class="microcopy">${limitText}</span></div>
@@ -223,7 +235,11 @@ function termsPage(): string {
   return layout(`<main class="site-main legal" id="main"><p class="eyebrow">Use agreement</p><h1>Terms</h1><p class="lede">A private thinking tool, not an authority on what you know.</p><p><strong>Last updated:</strong> August 30, 2026</p><h2>The service</h2><p>Knowledge Boundary Map lets you create a local map and record your own assessments. It does not fact-check claims, measure intelligence, certify expertise, or replace a teacher or professional advice. You are responsible for checking important information against reliable sources.</p><h2>Free use and lifetime Studio</h2><p>The free version includes up to ${FREE_CLAIM_LIMIT} claims per local map and complete rehearsal and export tools. A $12 USD one-time Studio purchase unlocks unlimited claims and full rehearsal history for the lifetime of this product. No subscription is created. Sociobot/Dodo is merchant of record; refund requests are handled there. A refunded or invalid license is automatically locked.</p><h2>Availability and data</h2><p>The app is provided “as is” without a promise of uninterrupted availability. Data is stored locally, so you should export backups. Clearing browser data, changing devices, or browser failures can remove the local map. A valid license token can be restored on another device.</p><h2>Acceptable use</h2><p>Do not interfere with the service, attempt to misuse purchase verification, or use the app unlawfully. The software is also available under its repository’s MIT license.</p><h2>Changes and contact</h2><p>Material changes will be reflected by the date above. Questions can be sent to <a href="mailto:support@sociobot.in">support@sociobot.in</a>.</p></main>`);
 }
 
-function route(): void {
+function notFoundPage(): string {
+  return layout(`<main class="site-main legal not-found" id="main"><p class="eyebrow">Missing paper slip</p><h1>That page is not in this map.</h1><p class="lede">The address may be incomplete, or the page may have moved.</p><a class="button primary" href="${routeHref('/')}" data-route>Go to your map</a></main>`);
+}
+
+function route(options: RouteOptions = {}): void {
   syncModeWithLocation();
   closeTimer();
   const path = location.pathname.replace(/\/$/, '') || '/';
@@ -231,21 +247,33 @@ function route(): void {
   if (path === '/privacy') app.innerHTML = privacyPage();
   else if (path === '/terms') app.innerHTML = termsPage();
   else if (path === '/upgrade') app.innerHTML = upgradePage();
-  else app.innerHTML = map.claims.length ? mapPage() : heroPage();
+  else if (isMap) app.innerHTML = map.claims.length ? mapPage() : heroPage();
+  else app.innerHTML = notFoundPage();
   bindCommon();
   if (isMap && map.claims.length) bindMap();
   if (isMap && !map.claims.length) bindHero();
   if (path === '/upgrade') bindUpgrade();
   updateRouteMetadata(path);
-  window.scrollTo(0, 0);
+  if (options.focusHeading) focusPageHeading();
+  if (options.scroll === 'top') requestAnimationFrame(() => window.scrollTo(0, 0));
+  const scrollPosition = typeof options.scroll === 'object' ? options.scroll : undefined;
+  if (scrollPosition) requestAnimationFrame(() => window.scrollTo(scrollPosition.x, scrollPosition.y));
 }
 
 function navigate(path: string): void {
-  history.pushState({}, '', routeHref(path));
-  route();
+  rememberScrollPosition();
+  history.pushState({ scrollX: 0, scrollY: 0 }, '', routeHref(path));
+  route({ scroll: 'top', focusHeading: true });
+}
+
+function focusPageHeading(): void {
   const heading = document.querySelector<HTMLElement>('main h1');
   heading?.setAttribute('tabindex', '-1');
-  heading?.focus();
+  heading?.focus({ preventScroll: true });
+}
+
+function rememberScrollPosition(): void {
+  history.replaceState({ ...(history.state ?? {}), scrollX: window.scrollX, scrollY: window.scrollY }, '', location.href);
 }
 
 function syncModeWithLocation(): void {
@@ -267,6 +295,8 @@ function updateRouteMetadata(path: string): void {
       ? 'Terms — Knowledge Boundary Map'
       : path === '/upgrade'
         ? 'Studio — Knowledge Boundary Map'
+        : path !== '/' && path !== '/demo'
+          ? 'Page not found — Knowledge Boundary Map'
         : demoMode
           ? 'Demo — Knowledge Boundary Map'
           : 'Knowledge Boundary Map — check what you can explain';
@@ -279,13 +309,14 @@ function updateRouteMetadata(path: string): void {
 }
 
 function enterDemo(): void {
+  rememberScrollPosition();
   history.pushState({}, '', '/demo');
   demoMode = true;
   map = loadMap();
   licenseToken = safeGet(LICENSE_KEY) ?? '';
   licenseVerdict = readVerdict();
   ensureSampleMap();
-  route();
+  route({ scroll: 'top' });
   showToast('Demo loaded. Your real map is untouched.');
 }
 
@@ -306,8 +337,9 @@ function startForReal(): void {
   licenseToken = safeGet(LICENSE_KEY) ?? '';
   licenseVerdict = readVerdict();
   selectedClaimId = '';
-  history.pushState({}, '', '/');
-  route();
+  rememberScrollPosition();
+  history.pushState({ scrollX: 0, scrollY: 0 }, '', '/');
+  route({ scroll: 'top', focusHeading: true });
   showToast('You are now using your private map.');
 }
 
@@ -359,7 +391,10 @@ function bindDialogClosers(): void {
   document.querySelectorAll<HTMLDialogElement>('dialog').forEach((dialog) => {
     dialog.querySelectorAll<HTMLElement>('[data-close]').forEach((button) => button.addEventListener('click', () => dialog.close()));
     dialog.addEventListener('click', (event) => { if (event.target === dialog) dialog.close(); });
-    dialog.addEventListener('close', () => closeTimer());
+    dialog.addEventListener('close', () => {
+      closeTimer();
+      if (dialog.id === 'rehearsal-dialog') restoreRehearsalFocus();
+    });
   });
 }
 
@@ -388,10 +423,19 @@ function bindClaimForm(): void {
 }
 
 function openRehearsal(id: string): void {
+  rehearsalReturnFocusId = id;
   selectedClaimId = id;
   route();
   openDialog('rehearsal-dialog');
   setTimeout(() => document.querySelector<HTMLButtonElement>('#timer-toggle')?.focus(), 0);
+}
+
+function restoreRehearsalFocus(): void {
+  const id = rehearsalReturnFocusId;
+  if (!id) return;
+  window.setTimeout(() => {
+    document.querySelector<HTMLButtonElement>(`[data-claim-id="${CSS.escape(id)}"]`)?.focus();
+  }, 0);
 }
 
 function bindRehearsalForm(): void {
@@ -522,36 +566,44 @@ function bindUpgrade(): void {
     const token = String(new FormData(form).get('license') ?? '').trim();
     if (!token) { setErrors('license-errors', ['Paste the license token from your receipt.']); return; }
     const submit = form.querySelector<HTMLButtonElement>('button[type="submit"]')!; submit.disabled = true; submit.textContent = 'Checking…';
-    const verdict = await requestLicenseVerdict(token, true);
-    if (verdict?.valid) {
-      licenseToken = token; licenseVerdict = verdict;
-      safeSet(LICENSE_KEY, token); safeSet(VERDICT_KEY, JSON.stringify(verdict));
+    const check = await requestLicenseVerdict(token, true);
+    if (check.verdict?.valid) {
+      licenseToken = token; licenseVerdict = check.verdict; licenseServiceUnavailable = false;
+      safeSet(LICENSE_KEY, token); safeSet(VERDICT_KEY, JSON.stringify(check.verdict));
       route(); showToast('Studio restored on this browser.');
     }
-    else { setErrors('license-errors', [navigator.onLine ? 'That license is not active for this product. Check the token and try again.' : 'You appear to be offline. Connect and try restoring again.']); submit.disabled = false; submit.textContent = 'Verify and restore'; }
+    else {
+      const message = check.unavailable
+        ? navigator.onLine
+          ? 'License verification is unavailable right now. Your map still works. Try again in a moment.'
+          : 'You appear to be offline. Connect and try restoring again.'
+        : 'That license is not active for this product. Check the token and try again.';
+      setErrors('license-errors', [message]); submit.disabled = false; submit.textContent = 'Verify and restore';
+    }
   });
 }
 
-async function requestLicenseVerdict(token: string, force = false): Promise<LicenseVerdict | null> {
+async function requestLicenseVerdict(token: string, force = false): Promise<LicenseCheck> {
   const cachedForToken = licenseVerdict?.token === token ? licenseVerdict : null;
-  if (!force && cachedForToken && Date.now() - cachedForToken.checkedAt < 86_400_000) return cachedForToken;
+  if (!force && cachedForToken && Date.now() - cachedForToken.checkedAt < 86_400_000) return { verdict: cachedForToken, unavailable: false };
   try {
     const response = await fetch(`${BILLING_BASE}/api/v1/products/knowledge-boundary-map/verify?license=${encodeURIComponent(token)}`, { headers: { Accept: 'application/json' } });
     const result = await response.json() as { valid?: boolean; reason?: string };
     if (!response.ok || typeof result.valid !== 'boolean') throw new Error('License verification is unavailable.');
-    return { token, valid: result.valid, reason: result.reason, checkedAt: Date.now() };
-  } catch { return cachedForToken; }
+    return { verdict: { token, valid: result.valid, reason: result.reason, checkedAt: Date.now() }, unavailable: false };
+  } catch { return { verdict: cachedForToken, unavailable: true }; }
 }
 
 async function refreshLicense(force = false): Promise<void> {
   if (!licenseToken) return;
   const before = JSON.stringify(licenseVerdict);
-  const verdict = await requestLicenseVerdict(licenseToken, force);
-  if (verdict) {
-    licenseVerdict = verdict;
-    safeSet(VERDICT_KEY, JSON.stringify(verdict));
+  const check = await requestLicenseVerdict(licenseToken, force);
+  licenseServiceUnavailable = check.unavailable;
+  if (check.verdict) {
+    licenseVerdict = check.verdict;
+    safeSet(VERDICT_KEY, JSON.stringify(check.verdict));
   }
-  if (before !== JSON.stringify(licenseVerdict)) route();
+  if (before !== JSON.stringify(licenseVerdict) || check.unavailable) route();
 }
 
 function setErrors(id: string, errors: string[]): void {
@@ -585,13 +637,19 @@ async function initializeLicense(): Promise<void> {
       safeRemove(VERDICT_KEY);
     }
     licenseToken = incoming; safeSet(LICENSE_KEY, incoming); params.delete('license');
-    history.replaceState({}, '', `${location.pathname}${params.size ? `?${params}` : ''}${location.hash}`);
+    history.replaceState(history.state, '', `${location.pathname}${params.size ? `?${params}` : ''}${location.hash}`);
     route();
   }
   await refreshLicense();
 }
 
-window.addEventListener('popstate', route);
+window.history.scrollRestoration = 'manual';
+window.addEventListener('popstate', (event) => {
+  const state = event.state as { scrollX?: unknown; scrollY?: unknown } | null;
+  const x = typeof state?.scrollX === 'number' ? state.scrollX : 0;
+  const y = typeof state?.scrollY === 'number' ? state.scrollY : 0;
+  route({ scroll: { x, y }, focusHeading: true });
+});
 window.addEventListener('online', () => { updateOnlineState(); void refreshLicense(true); });
 window.addEventListener('offline', updateOnlineState);
 window.addEventListener('resize', () => requestAnimationFrame(drawConnections));

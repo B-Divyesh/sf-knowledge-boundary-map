@@ -10,12 +10,13 @@ Use it after reading, watching, or taking notes on a topic. It does not fact-che
 
 ## Product behavior
 
-- Browser-only storage with JSON and CSV export; no account or analytics.
-- A one-click sample map is available at `/demo` (or `/?demo=1`) and is stored separately from a real map.
-- Keyboard-navigable claim map and accessible rehearsal dialogs.
-- Offline shell after the first production visit.
-- Free workshop with 12 claims and the complete rehearsal/export flow.
-- Optional $12 one-time Studio license for unlimited claims and full rehearsal history, verified only through the Sociobot billing API.
+- Your map stays in this browser unless you export it. There are no accounts, analytics, trackers, third-party fonts, or runtime CDN scripts.
+- JSON restores the complete map. CSV exports a readable table.
+- A one-click sample map is available at `/demo` (or `/?demo=1`) and uses a separate `demo:` storage namespace.
+- The claim map and rehearsal dialog work with a keyboard.
+- The offline shell works after the first production visit.
+- The free workshop includes 12 claims and the complete rehearsal and export flow.
+- Optional Studio is a $12 USD one-time purchase. It adds unlimited claims and full rehearsal history.
 
 ## Develop and verify
 
@@ -24,9 +25,10 @@ Requires Node.js 20 or newer.
 ```sh
 npm ci
 npm run dev
+npm run lint
 npm test
 npm run build       # exact production command; output is dist/
-npm run test:e2e    # starts the production preview automatically
+npm run test:e2e    # builds, then starts the production preview automatically
 npm run test:billing # production catalog and hosted-checkout regression
 ```
 
