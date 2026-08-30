@@ -13,6 +13,20 @@ const openDemo = async (page: import('@playwright/test').Page) => {
   await expect(page).toHaveURL(/\/demo$/);
 };
 
+function contrastRatio(foreground: string, background: string): number {
+  const relativeLuminance = (color: string) => {
+    const channels = color.match(/\d+(?:\.\d+)?/g)?.slice(0, 3).map(Number);
+    if (!channels || channels.length !== 3) throw new Error(`Expected an RGB color, received ${color}.`);
+    const [red, green, blue] = channels.map((channel) => {
+      const value = channel / 255;
+      return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+    });
+    return 0.2126 * red + 0.7152 * green + 0.0722 * blue;
+  };
+  const [lighter, darker] = [relativeLuminance(foreground), relativeLuminance(background)].sort((a, b) => b - a);
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
 test('loads with an understandable first screen and no console errors', async ({ page }) => {
   const errors: string[] = [];
   page.on('console', (message) => { if (message.type() === 'error') errors.push(message.text()); });
@@ -166,6 +180,36 @@ test('@claim:next-question picks a blocked claim before recognize or untested cl
   await openDemo(page);
   await expect(page.getByRole('heading', { level: 2, name: 'Random assignment reduces systematic confounding' })).toBeVisible();
   await expect(page.getByText('Explain why random assignment balances known and unknown confounders only on average.')).toBeVisible();
+});
+
+test('@finding:demo-banner-dark-contrast-and-touch-targets keeps all demo actions accessible at desktop and 390px', async ({ browser }) => {
+  for (const colorScheme of ['light', 'dark'] as const) {
+    for (const viewport of [{ width: 1366, height: 900 }, { width: 390, height: 844 }]) {
+      const context = await browser.newContext({ colorScheme, viewport });
+      const page = await context.newPage();
+      try {
+        await page.goto('/demo');
+        const banner = page.getByLabel('Demo controls');
+        const actions = banner.getByRole('button');
+        const colors = await banner.evaluate((element) => ({
+          background: getComputedStyle(element).backgroundColor,
+          foreground: getComputedStyle(element.querySelector('button')!).color,
+        }));
+        expect(contrastRatio(colors.foreground, colors.background)).toBeGreaterThanOrEqual(4.5);
+        await expect(actions).toHaveCount(2);
+        for (const action of await actions.all()) {
+          const box = await action.boundingBox();
+          expect(box, `${colorScheme} ${viewport.width}px demo action should have a box`).not.toBeNull();
+          expect(box!.width).toBeGreaterThanOrEqual(44);
+          expect(box!.height).toBeGreaterThanOrEqual(44);
+        }
+        const axe = await new AxeBuilder({ page }).analyze();
+        expect(axe.violations.filter((item) => ['serious', 'critical'].includes(item.impact ?? ''))).toEqual([]);
+      } finally {
+        await context.close();
+      }
+    }
+  }
 });
 
 test('routes, 404, mobile layout, and accessibility work', async ({ page }) => {

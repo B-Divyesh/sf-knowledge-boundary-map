@@ -1,48 +1,52 @@
-# Handoff — independent verification 7
+# Handoff — demo-banner accessibility repair
 
 ## Status
 
-**FAIL** for candidate `b4855438321bd9202c3687c6be3c28990666718d` at <https://knowledge-boundary-map.sociobot.in> on 2026-08-30 UTC.
+**Local repair verified; deployment pending.** This repairs the release blocker recorded in independent verification 7 for base candidate `b4855438321bd9202c3687c6be3c28990666718d` and report commit `c006b9a853ada83dd36fc0da37f84cc378930006`.
 
-The live deployment matches the candidate byte-for-byte and the core product works. Release is blocked by a serious dark-mode contrast defect in the persistent demo banner. The two demo actions are also 36 px high rather than the required 44 px.
+## What changed
 
-Full evidence: [verification-7.md](verification-7.md).
+- Reproduced the original dark `/demo` defect before editing: Axe reported four serious `color-contrast` nodes at 1366 px and 390 px, and both demo actions were 36 px tall. The foreground was `#FFFDF5` on dark-mode lake `#74BCD2` (2.08:1 in the verifier’s evidence).
+- Added theme-specific demo-banner foreground and focus tokens. Dark mode now uses drafting-table ink `#17231E` on `#74BCD2`; light mode keeps cream on its darker lake surface.
+- Raised `.demo-action` from 36 px to the required 44 px minimum and made its hover/focus treatment inherit the accessible banner foreground.
+- Added `@finding:demo-banner-dark-contrast-and-touch-targets`, which opens `/demo` in light and dark at 1366×900 and 390×844, measures each action, calculates the rendered contrast ratio, and runs Axe for serious/critical findings.
+- Refreshed `.factory/copy-audit.md` to remove the stale non-rendered sentence and capture the exact landing `<main>` text.
 
-## What was verified
+## Exact local evidence
 
-- All 12 `.factory/claims.json` commands pass individually after `npm ci`.
-- `npm test`: 10 passed.
-- `npm run typecheck`: passed.
-- `npm run lint`: passed.
-- `npm run build`: passed and produced `dist/`.
-- `npm run test:e2e`: 15 passed locally.
-- Full live E2E: 15 passed.
-- `npm run test:response-policy`: passed.
-- Live artifact hashes match the local candidate build.
-- Main, invalid, boundary, persistence, undo, import/export, keyboard, mobile, storage-error, service-worker update, and offline paths were exercised.
-- Lighthouse mobile `/demo`: Performance 96, Accessibility 100 in light mode, Best Practices 100, SEO 100; LCP 1.07 s, CLS 0.
+Manual browser check after the repair:
 
-## Release-blocking evidence
+| Theme | Viewport | Rendered banner contrast | Reset / Start height | Serious/critical Axe findings |
+|---|---:|---:|---:|---:|
+| Light | 1366×900 | 6.96:1 | 44 px / 44 px | 0 |
+| Light | 390×844 | 6.96:1 | 44 px / 44 px | 0 |
+| Dark | 1366×900 | 7.62:1 | 44 px / 44 px | 0 |
+| Dark | 390×844 | 7.62:1 | 44 px / 44 px | 0 |
 
-Dark `/demo` fails Axe `color-contrast` on desktop and 390 px. Banner text and the Reset/Start controls render `#fffdf5` on `#74bcd2`, a 2.08:1 ratio versus the required 4.5:1. At 390 px the controls measure 36 px high.
+Completed from a clean `npm ci` install:
 
-The existing E2E suite scans Axe only on Privacy and Terms in the default theme, so it does not catch this primary-state defect.
-
-## Repair and verify
-
-Adjust the dark demo banner contrast, raise both demo actions to at least 44 px, and add desktop/mobile light/dark demo Axe and target-size coverage. Then run:
-
-```sh
-npm ci
-npm audit --audit-level=low
-npm test
-npm run typecheck
-npm run lint
-npm run build
-npm run test:e2e -- --grep @claim:
-npm run test:e2e
-PLAYWRIGHT_BASE_URL=https://knowledge-boundary-map.sociobot.in npm run test:e2e
-npm run test:response-policy
+```text
+npm ci                                           PASS — 59 packages, 0 vulnerabilities
+npm audit --audit-level=low                      PASS — 0 vulnerabilities
+npm test                                         PASS — 10 tests
+npm run typecheck                                PASS
+npm run lint                                     PASS
+npm run build                                    PASS — dist/ with index.html
+npm run test:e2e -- --grep @claim:               PASS — 12 claims
+npm run test:e2e -- --grep @finding:demo-banner-dark-contrast-and-touch-targets
+                                                  PASS — 1 regression test
+npm run test:e2e                                 PASS — 16 tests
+npm run test:response-policy                     PASS — live AVIF 200, image/avif
 ```
 
-No product code was modified in this verification.
+The browser suite exercises the desktop and 390 px layouts, Arrow/Enter/Escape dialog workflow, separate demo storage, same-origin privacy request recording, offline reload, and controlled service-worker update. Axe is exercised in the new four-case demo regression as well as the legal routes. This static web product has no package consumer or server API to verify.
+
+The production build emitted 36.06 kB raw / 12.30 kB gzip JavaScript and 18.96 kB raw / 5.10 kB gzip CSS. The hero AVIF is 74,110 bytes.
+
+## Deployment and post-deploy verification
+
+The built `dist/` directory is ready for the work order’s Azure Static Web Apps deployment as `sf-knowledge-boundary-map`. After deployment, this handoff will be updated with the live URL, identity/hash checks, `/opt/fleet/lib/verify-url.sh` evidence, and live browser results.
+
+## Known gaps and next steps
+
+No known product gaps. The remaining operational step is the scoped production deploy and its post-deploy verification.

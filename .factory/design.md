@@ -23,6 +23,8 @@ Light is the canonical, explicitly painted treatment because paper and pencil ar
 | saffron | `#E2AA3B` | `#D8AA53` | timer tab and paper accents |
 | focus ochre | `#765000` | `#D8AA53` | keyboard focus ring with ≥3:1 adjacent contrast |
 
+The demo banner uses the lake token as a high-attention sample-state surface. Its foreground is cream `#FFFDF5` in light mode and drafting-table ink `#17231E` in dark mode; both exceed 4.5:1 against their respective lake value. Its demo controls remain 44 px or taller in both treatments, including at 390 px.
+
 All body combinations meet WCAG AA; states always include labels and shapes, never color alone. Focus is a 3px dark ochre ring in the light treatment and saffron in the dark treatment, retaining the workshop palette while exceeding 3:1 against both canvas and paper.
 
 ## Typography

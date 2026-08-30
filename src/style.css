@@ -13,6 +13,8 @@
   --saffron: #e2aa3b;
   --focus: #765000;
   --shadow: #b8aa8e;
+  --demo-banner-ink: #fffdf5;
+  --demo-banner-focus: #fffdf5;
   --serif: Georgia, "Times New Roman", serif;
   --sans: "Avenir Next", Avenir, "Segoe UI", system-ui, sans-serif;
   font-family: var(--sans);
@@ -36,6 +38,8 @@
   --saffron: #d8aa53;
   --focus: #d8aa53;
   --shadow: #090a09;
+  --demo-banner-ink: #17231e;
+  --demo-banner-focus: #17231e;
 }
 
 * { box-sizing: border-box; }
@@ -199,10 +203,11 @@ dialog::backdrop { background: color-mix(in srgb, #08100c, transparent 25%); }
 .toast button { border: 0; background: transparent; color: var(--saffron); font-weight: 800; cursor: pointer; }
 .offline-banner { display: none; margin: 0; padding: 9px 20px; text-align: center; background: var(--saffron); color: #17231e; font-weight: 700; font-size: 14px; }
 .offline-banner.visible { display: block; }
-.demo-banner { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px max(20px, calc((100vw - 1240px)/2)); border-bottom: 1px solid var(--edge); background: var(--lake); color: #fffdf5; font-size: 14px; }
+.demo-banner { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px max(20px, calc((100vw - 1240px)/2)); border-bottom: 1px solid var(--edge); background: var(--lake); color: var(--demo-banner-ink); font-size: 14px; }
 .demo-banner > span:last-child { display: flex; flex-wrap: wrap; gap: 8px; }
-.demo-action { min-height: 36px; padding: 6px 10px; border: 1px solid currentColor; background: transparent; color: inherit; cursor: pointer; font-weight: 750; }
-.demo-action:hover { background: color-mix(in srgb, #fffdf5, transparent 84%); }
+.demo-action { min-height: 44px; padding: 6px 10px; border: 1px solid currentColor; background: transparent; color: inherit; cursor: pointer; font-weight: 750; }
+.demo-action:hover { background: color-mix(in srgb, currentColor, transparent 84%); }
+.demo-action:focus-visible { outline-color: var(--demo-banner-focus); }
 .license-note { padding: 11px 14px; margin: 0 0 24px; border-left: 5px solid var(--lake); background: color-mix(in srgb, var(--lake), transparent 90%); }
 .storage-warning { width: min(1240px, calc(100% - 40px)); margin: 20px auto 0; }
 .history { margin-top: 24px; }
