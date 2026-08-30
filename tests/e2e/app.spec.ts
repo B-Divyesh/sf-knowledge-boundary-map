@@ -212,6 +212,30 @@ test('@finding:demo-banner-dark-contrast-and-touch-targets keeps all demo action
   }
 });
 
+test('@finding:rehearsal-history disclosure opens with a 44px target at desktop and 390px in both themes', async ({ browser }) => {
+  for (const colorScheme of ['light', 'dark'] as const) {
+    for (const viewport of [{ width: 1366, height: 900 }, { width: 390, height: 844 }]) {
+      const context = await browser.newContext({ colorScheme, viewport });
+      const page = await context.newPage();
+      try {
+        await page.goto('/demo');
+        await page.getByRole('button', { name: 'Rehearse this claim' }).click();
+        const history = page.locator('.history details').first();
+        const disclosure = history.locator('summary');
+        await expect(disclosure).toBeVisible();
+        const box = await disclosure.boundingBox();
+        expect(box, `${colorScheme} ${viewport.width}px history disclosure should have a box`).not.toBeNull();
+        expect(box!.width).toBeGreaterThanOrEqual(44);
+        expect(box!.height).toBeGreaterThanOrEqual(44);
+        await disclosure.click();
+        await expect(history).toHaveAttribute('open', '');
+      } finally {
+        await context.close();
+      }
+    }
+  }
+});
+
 test('routes, 404, mobile layout, and accessibility work', async ({ page }) => {
   for (const [path, heading] of [['/privacy', 'Privacy'], ['/terms', 'Terms']] as const) {
     await page.goto(path);
