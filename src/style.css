@@ -53,6 +53,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .shell { min-height: 100vh; display: flex; flex-direction: column; }
 .site-header { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 14px max(20px, calc((100vw - 1240px)/2)); border-bottom: 1px solid var(--edge); background: color-mix(in srgb, var(--canvas), transparent 7%); }
 .brand { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; gap: 10px; color: var(--ink); text-decoration: none; font-weight: 750; letter-spacing: -.02em; }
+.brand-short { display: none; }
 .brand-mark { width: 30px; height: 30px; display: grid; place-items: center; background: var(--moss); color: var(--paper); clip-path: polygon(7% 14%, 93% 5%, 100% 87%, 13% 100%); }
 .header-actions, .button-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
 .nav-link, .icon-button, .button, button { min-height: 44px; }
@@ -83,9 +84,9 @@ h3 { font-size: 20px; line-height: 1.25; }
 .hero-facts { display: grid; gap: 7px; max-width: 540px; padding: 0; margin: 0; list-style: none; color: var(--muted); font-size: 14px; }
 .hero-facts li { display: flex; align-items: flex-start; gap: 8px; }
 .hero-facts svg { flex: 0 0 auto; margin-top: 3px; }
-.hero-art { position: relative; margin: 0; transform: rotate(1deg); }
-.hero-art::before { content: ""; position: absolute; inset: 12px -10px -12px 12px; background: var(--shadow); clip-path: polygon(4% 2%, 98% 0, 100% 94%, 2% 100%); }
-.hero-art picture, .hero-art img { display: block; position: relative; width: 100%; height: auto; clip-path: polygon(2% 3%, 99% 0, 97% 96%, 4% 100%); }
+.hero-art { position: relative; isolation: isolate; margin: 0; transform: rotate(1deg); }
+.hero-art::before { content: ""; position: absolute; z-index: -1; inset: 12px -10px -12px 12px; background: var(--shadow); clip-path: polygon(4% 2%, 98% 0, 100% 94%, 2% 100%); }
+.hero-art picture, .hero-art img { display: block; position: relative; z-index: 1; width: 100%; height: auto; clip-path: polygon(2% 3%, 99% 0, 97% 96%, 4% 100%); }
 .hero-art figcaption { position: relative; font-size: 13px; color: var(--muted); margin-top: 14px; max-width: 52ch; transform: rotate(-1deg); }
 .landing-section { margin-top: clamp(56px, 9vw, 112px); }
 .landing-section h2 { max-width: 18ch; margin-bottom: 16px; }
@@ -122,7 +123,7 @@ h3 { font-size: 20px; line-height: 1.25; }
 .ledger-item.recognize { border-color: var(--lake); }
 .ledger-item.blocked { border-color: var(--persimmon); }
 .workspace { display: grid; grid-template-columns: minmax(0, 1fr) 280px; gap: 28px; align-items: start; }
-.map-section { min-width: 0; }
+.map-section { min-width: 0; order: -1; }
 .section-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
 .section-heading h2 { margin: 0; font-size: 24px; }
 .map-help { color: var(--muted); font-size: 14px; margin-bottom: 16px; }
@@ -213,6 +214,7 @@ dialog::backdrop { background: color-mix(in srgb, #08100c, transparent 25%); }
   .hero { grid-template-columns: 1fr; min-height: auto; }
   .hero-art { width: min(620px, 100%); }
   .workspace { grid-template-columns: 1fr; }
+  .map-section { order: 0; }
   .probe-panel { position: static; display: grid; grid-template-columns: 180px 1fr; gap: 18px; }
   .boundary-ledger { overflow-x: auto; grid-template-columns: repeat(4, minmax(110px, 1fr)); }
   .upgrade-sheet { grid-template-columns: 1fr; }
@@ -223,7 +225,9 @@ dialog::backdrop { background: color-mix(in srgb, #08100c, transparent 25%); }
 
 @media (max-width: 560px) {
   .site-header { padding: 10px 16px; }
-  .brand span:last-child { display: none; }
+  .brand-full { display: none; }
+  .brand-short { display: inline; }
+  .brand { gap: 7px; font-size: 14px; white-space: nowrap; }
   .header-actions { gap: 2px; }
   .nav-link { padding-inline: 8px; font-size: 14px; }
   .site-main { width: min(100% - 28px, 1240px); padding-top: 28px; }
@@ -236,6 +240,7 @@ dialog::backdrop { background: color-mix(in srgb, #08100c, transparent 25%); }
   .map-canvas { padding: 22px 16px; }
   .claim-list { grid-template-columns: 1fr; }
   .probe-panel { display: block; }
+  .workspace .probe-panel { order: -1; margin-bottom: 4px; }
   .status-choices { grid-template-columns: 1fr; }
   .timer-row { align-items: flex-start; flex-direction: column; }
   .dialog-paper { padding: 22px 18px 30px; }

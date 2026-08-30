@@ -3,28 +3,18 @@ import { asCsv, EMPTY_MAP, FREE_CLAIM_LIMIT, makeClaim, recordRehearsal, sanitiz
 
 const STORAGE_KEY = 'kbm:map:v1';
 const THEME_KEY = 'kbm:theme';
-const LICENSE_KEY = 'sb_license:knowledge-boundary-map';
-const VERDICT_KEY = 'sb_license_verdict:knowledge-boundary-map';
-const BILLING_BASE = (import.meta.env.VITE_BILLING_API_BASE || 'https://api.sociobot.in').replace(/\/$/, '');
-const CHECKOUT_URL = `${BILLING_BASE}/api/v1/products/knowledge-boundary-map/checkout`;
-const BUILD_ID = import.meta.env.VITE_BUILD_ID || 'repair-5';
-
-type LicenseVerdict = { token: string; valid: boolean; checkedAt: number; reason?: string };
-type LicenseCheck = { verdict: LicenseVerdict | null; unavailable: boolean };
+const BUILD_ID = import.meta.env.VITE_BUILD_ID || 'polish-1';
 type RouteOptions = { scroll?: 'top' | { x: number; y: number }; focusHeading?: boolean };
 
 let storageAvailable = true;
 let demoMode = isDemoLocation();
 let map: MapData = loadMap();
-let licenseToken = safeGet(LICENSE_KEY) ?? '';
-let licenseVerdict = readVerdict();
 let selectedClaimId = '';
 let timerId = 0;
 let secondsLeft = 90;
 let lastRemoved: { claim: Claim; index: number; dependentIds: string[] } | null = null;
 let toastTimer = 0;
 let rehearsalReturnFocusId = '';
-let licenseServiceUnavailable = false;
 
 const app = document.querySelector<HTMLDivElement>('#app')!;
 
@@ -66,7 +56,20 @@ function sampleMap(): MapData {
   const first = makeClaim('A correlation does not by itself show causation', 'Explain at least two reasons correlated variables can move together.');
   const second = makeClaim('A confounder can affect both measured variables', 'Give a concrete example and show the hidden path.');
   const third = makeClaim('Random assignment reduces systematic confounding', 'Explain what random assignment does and does not guarantee.', [first.id, second.id]);
-  return { version: 1, topic: 'Causal inference basics', claims: [first, second, third] };
+  const completedAt = '2026-08-30T09:00:00.000Z';
+  const rehearse = (claim: Claim, status: ClaimStatus, teachBack: string, counterexample: string, nextQuestion: string, at: string): Claim => ({
+    ...claim,
+    status,
+    teachBack,
+    counterexample,
+    nextProbe: nextQuestion,
+    updatedAt: at,
+    rehearsals: [{ at, status, teachBack, counterexample, nextProbe: nextQuestion }],
+  });
+  const explained = rehearse(first, 'explain', 'Two variables can move together because one causes the other, a third factor causes both, or they share a trend over time.', 'Ice-cream sales and drownings rise together in summer; neither causes the other.', 'Draw a causal graph for a pair of correlated variables.', completedAt);
+  const recognized = rehearse(second, 'recognize', 'A confounder is a third variable that affects both the possible cause and the outcome.', '', 'Use a DAG to show how temperature confounds ice-cream sales and drownings.', '2026-08-30T09:03:00.000Z');
+  const blocked = rehearse(third, 'blocked', 'I know random assignment helps, but I cannot yet explain why the groups become comparable.', '', 'Explain why random assignment balances known and unknown confounders only on average.', '2026-08-30T09:06:00.000Z');
+  return { version: 1, topic: 'Causal inference basics', claims: [explained, recognized, blocked] };
 }
 
 function ensureSampleMap(): void {
@@ -74,23 +77,6 @@ function ensureSampleMap(): void {
     map = sampleMap();
     safeSet(STORAGE_KEY, JSON.stringify(map));
   }
-}
-
-function readVerdict(): LicenseVerdict | null {
-  try {
-    const parsed = JSON.parse(safeGet(VERDICT_KEY) ?? 'null') as LicenseVerdict | null;
-    return parsed
-      && typeof parsed.token === 'string'
-      && typeof parsed.valid === 'boolean'
-      && typeof parsed.checkedAt === 'number'
-      && Number.isFinite(parsed.checkedAt)
-      ? parsed
-      : null;
-  } catch { return null; }
-}
-
-function isUnlocked(): boolean {
-  return Boolean(licenseToken && licenseVerdict?.token === licenseToken && licenseVerdict.valid);
 }
 
 function escapeHtml(value: string): string {
@@ -120,11 +106,10 @@ function routeHref(path: string): string {
 function header(): string {
   const dark = document.documentElement.dataset.theme === 'dark';
   return `<header class="site-header">
-    <a class="brand" href="${routeHref('/')}" data-route aria-label="Knowledge Boundary Map home"><span class="brand-mark" aria-hidden="true">↗</span><span>Knowledge Boundary Map</span></a>
+    <a class="brand" href="${routeHref('/')}" data-route aria-label="Knowledge Boundary Map home"><span class="brand-mark" aria-hidden="true">↗</span><span class="brand-full">Knowledge Boundary Map</span><span class="brand-short" aria-hidden="true">Boundary Map</span></a>
     <nav class="header-actions" aria-label="Primary navigation">
       <a class="nav-link" href="${routeHref('/demo')}" data-route>Demo</a>
       <a class="nav-link" href="${routeHref('/privacy')}" data-route>Privacy</a>
-      <a class="nav-link" href="${routeHref('/upgrade')}" data-route>${isUnlocked() ? 'Studio unlocked' : 'Lifetime studio'}</a>
       <button class="icon-button" id="theme-toggle" type="button" aria-label="Use ${dark ? 'light' : 'dark'} theme">${icon(dark ? 'sun' : 'moon')}</button>
     </nav>
   </header><p class="offline-banner${navigator.onLine ? '' : ' visible'}" role="status">You’re offline. Your map still works and stays on this device.</p>`;
@@ -141,33 +126,31 @@ function layout(content: string): string {
 
 function heroPage(): string {
   return layout(`<main class="site-main" id="main"><section class="hero">
-    <div class="hero-copy"><p class="eyebrow">For self-learners testing familiar topics</p><h1>Check what you can explain.</h1>
-    <p class="lede">For self-learners testing what feels familiar. Pin a claim, teach it back, and choose your next question.</p>
+    <div class="hero-copy"><p class="eyebrow">After reading, watching, or taking notes</p><h1>Test what you can explain.</h1>
+    <p class="lede">For self-learners who want to separate recognition from an explanation they can produce.</p>
     <div class="hero-actions"><button class="button primary" id="load-example" type="button">Try it with sample data</button><button class="button quiet" id="start-map" type="button">${icon('plus')} Pin your first claim</button></div>
-    <ul class="hero-facts"><li>${icon('lock')} <span>Private: stored in this browser.</span></li><li>Offline: works after your first visit.</li><li>Free: 12 claims; Studio is $12 once.</li></ul></div>
-    <figure class="hero-art"><picture><source srcset="/assets/boundary-diorama.avif" type="image/avif"><source srcset="/assets/boundary-diorama.webp" type="image/webp"><img src="/assets/boundary-diorama.webp" width="1152" height="768" fetchpriority="high" decoding="async" alt="Layered paper hills form a path from blue fog past an orange obstacle toward a clear golden marker."></picture><figcaption>Use the map to choose what to study next, not to score your intelligence.</figcaption></figure>
+    <ul class="hero-facts"><li>${icon('lock')} <span>Private: stored in this browser.</span></li><li>Offline: reloads after your first visit.</li><li>Free: up to 12 claims per map.</li></ul></div>
+    <figure class="hero-art"><picture><source srcset="/assets/boundary-diorama.avif" type="image/avif"><source srcset="/assets/boundary-diorama.webp" type="image/webp"><img src="/assets/boundary-diorama.webp" width="1152" height="768" fetchpriority="high" decoding="async" alt="Layered paper hills form a path from blue fog past an orange obstacle toward a clear golden marker."></picture><figcaption>Record your own evidence and uncertainty. This tool does not score intelligence.</figcaption></figure>
   </section>
-  <section class="landing-section preview-section" aria-labelledby="preview-title"><div><p class="eyebrow">Live preview</p><h2 id="preview-title">See the boundary before you start.</h2><p>Each paper slip records one claim, its prerequisites, and your latest self-assessment.</p></div><ol class="preview-map" aria-label="Sample claim map"><li><strong>Correlation is not causation</strong><span>Not rehearsed</span></li><li><strong>A confounder affects both variables</strong><span>Needs: correlation</span></li><li><strong>Random assignment reduces confounding</strong><span>Needs: both earlier claims</span></li></ol></section>
-  <section class="landing-section how-section" aria-labelledby="how-title"><p class="eyebrow">How it works</p><h2 id="how-title">Find the next question to study.</h2><ol class="steps-list"><li><strong>Pin a claim.</strong><span>Start with something that feels familiar.</span></li><li><strong>Teach it back.</strong><span>Write what you can produce without notes.</span></li><li><strong>Choose a next probe.</strong><span>Record the example or prerequisite to test next.</span></li></ol></section>
-  <section class="landing-section limits-section" aria-labelledby="limits-title"><div><p class="eyebrow">Privacy and limits</p><h2 id="limits-title">Your assessment stays yours.</h2><p>Your map stays in this browser unless you export it. No account, analytics, trackers, third-party fonts, or runtime CDN scripts are used.</p></div><div><h3>What this does not do</h3><p>It records your self-assessment. It does not fact-check claims or measure intelligence.</p></div></section>
-  <section class="landing-section studio-section" aria-labelledby="studio-title"><div><p class="eyebrow">Optional Studio</p><h2 id="studio-title">Keep every claim in one map.</h2><p>Studio is a $12 USD one-time purchase. It adds unlimited claims and full rehearsal history.</p></div><a class="button primary" href="${routeHref('/upgrade')}" data-route>See Studio details</a></section>
+  <section class="landing-section preview-section" aria-labelledby="preview-title"><div><p class="eyebrow">Live preview</p><h2 id="preview-title">Preview a claim map.</h2><p>Each paper slip keeps one claim, its prerequisites, and your latest self-assessment.</p></div><ol class="preview-map" aria-label="Sample claim map"><li><strong>Correlation is not causation</strong><span>Can explain</span></li><li><strong>A confounder affects both variables</strong><span>Recognize only</span></li><li><strong>Random assignment reduces confounding</strong><span>Blocked · needs both earlier claims</span></li></ol></section>
+  <section class="landing-section how-section" aria-labelledby="how-title"><p class="eyebrow">How it works</p><h2 id="how-title">Choose your next question.</h2><ol class="steps-list"><li><strong>Pin a claim.</strong><span>Start with something that feels familiar.</span></li><li><strong>Teach it back.</strong><span>Write what you can produce without notes.</span></li><li><strong>Record a next question.</strong><span>Choose an example or prerequisite to test next.</span></li></ol></section>
+  <section class="landing-section limits-section" aria-labelledby="limits-title"><div><p class="eyebrow">Privacy and limits</p><h2 id="limits-title">Your map stays in this browser.</h2><p>Your map stays here unless you export it. There are no accounts, analytics, or trackers. The app loads no fonts or scripts from other sites.</p></div><div><h3>What this does not do</h3><p>It records your self-assessment. It does not fact-check claims or measure intelligence.</p></div></section>
   ${claimDialog()}</main>`);
 }
 
 function mapPage(): string {
   const counts = (['explain', 'recognize', 'blocked', 'untested'] as ClaimStatus[]).map((status) => [status, map.claims.filter((claim) => claim.status === status).length] as const);
-  const limitText = isUnlocked() ? `${map.claims.length} claims · Studio unlocked` : `${map.claims.length} of ${FREE_CLAIM_LIMIT} free claims`;
+  const limitText = `${map.claims.length} of ${FREE_CLAIM_LIMIT} free claims`;
+  const next = nextClaim();
   return layout(`<main class="site-main" id="main">
     <div class="map-header"><div><p class="eyebrow">Boundary workshop</p><h1>Your explanation map</h1><label for="topic" class="visually-hidden">Topic name</label><input id="topic" class="topic-input" type="text" maxlength="120" value="${escapeHtml(map.topic)}" placeholder="Name this topic (optional)"></div>
     <div class="button-row"><button class="button primary" id="new-claim" type="button">${icon('plus')} Pin a claim</button><button class="button quiet" id="export-menu" type="button">${icon('download')} Export</button></div></div>
-    ${licenseServiceUnavailable && licenseToken ? '<p class="license-note" role="status">License verification is unavailable right now. Your existing map still works; try again later.</p>' : ''}
-    ${licenseVerdict && !licenseVerdict.valid && licenseToken && !licenseServiceUnavailable ? `<p class="license-note">Your saved license is no longer active. The free map still works. <a href="${CHECKOUT_URL}">Get a new license</a>.</p>` : ''}
     <p class="visually-hidden" id="boundary-ledger-help">This summary scrolls horizontally on narrow screens. Focus it, then use the Left and Right Arrow keys to review every status.</p>
     <ul class="boundary-ledger" tabindex="0" aria-label="Self-assessed boundary summary" aria-describedby="boundary-ledger-help">${counts.map(([status, count]) => `<li class="ledger-item ${status}"><strong>${count}</strong><span>${statusLabel(status)}</span></li>`).join('')}</ul>
-    <div class="workspace"><section class="map-section" aria-labelledby="claim-map-title"><div class="section-heading"><h2 id="claim-map-title">Claim map</h2><span class="microcopy">${limitText}</span></div>
+    <div class="workspace"><aside class="probe-panel" aria-labelledby="next-probe-title"><div><p class="eyebrow">Next question</p><h2 id="next-probe-title">${next ? escapeHtml(next.title) : 'Pin a claim'}</h2></div><div>${next ? `<p>${next.nextProbe ? escapeHtml(next.nextProbe) : next.status === 'untested' ? 'Try explaining it without opening your notes.' : 'Write one question that could change this assessment.'}</p><button class="button" data-rehearse="${escapeHtml(next.id)}" type="button">Rehearse this claim</button>` : '<p>Your next question will appear here after you pin a claim.</p>'}<ol class="probe-list"><li>Explain from memory.</li><li>Name what it depends on.</li><li>Find a boundary or counterexample.</li></ol></div></aside><section class="map-section" aria-labelledby="claim-map-title"><div class="section-heading"><h2 id="claim-map-title">Claim map</h2><span class="microcopy">${limitText}</span></div>
       <p class="map-help" id="map-instructions">Tab through claims, or use arrow keys within the map. Press Enter to rehearse the focused claim.</p>
       <div class="map-canvas" id="map-canvas">${mapContents()}</div><p class="visually-hidden">${dependencySummary()}</p>
-    </section>${probePanel()}</div>
+    </section></div>
     ${claimDialog()}${rehearsalDialog()}${exportDialog()}
   </main>`);
 }
@@ -187,18 +170,17 @@ function dependencySummary(): string {
   return `Text alternative for map. ${descriptions.join(' ')}`;
 }
 
-function probePanel(): string {
+function nextClaim(): Claim | undefined {
   const blocked = map.claims.filter((claim) => claim.status === 'blocked');
   const recognize = map.claims.filter((claim) => claim.status === 'recognize');
   const untested = map.claims.filter((claim) => claim.status === 'untested');
-  const next = blocked[0] ?? recognize[0] ?? untested[0] ?? [...map.claims].sort((a, b) => a.updatedAt.localeCompare(b.updatedAt))[0];
-  return `<aside class="probe-panel" aria-labelledby="next-probe-title"><div><p class="eyebrow">Next edge</p><h2 id="next-probe-title">${next ? escapeHtml(next.title) : 'Pin a claim'}</h2></div><div>${next ? `<p>${next.nextProbe ? escapeHtml(next.nextProbe) : next.status === 'untested' ? 'Try explaining it without opening your notes.' : 'Write one question that could change this assessment.'}</p><button class="button" data-rehearse="${escapeHtml(next.id)}" type="button">Rehearse this claim</button>` : '<p>Your next probe will appear here after you pin a claim.</p>'}<ol class="probe-list"><li>Explain from memory.</li><li>Name what it depends on.</li><li>Find a boundary or counterexample.</li></ol></div></aside>`;
+  return blocked[0] ?? recognize[0] ?? untested[0] ?? [...map.claims].sort((a, b) => a.updatedAt.localeCompare(b.updatedAt))[0];
 }
 
 function claimDialog(): string {
-  const atLimit = map.claims.length >= FREE_CLAIM_LIMIT && !isUnlocked();
+  const atLimit = map.claims.length >= FREE_CLAIM_LIMIT;
   return `<dialog id="claim-dialog" aria-labelledby="claim-dialog-title"><div class="dialog-paper"><div class="dialog-head"><div><p class="eyebrow">New paper slip</p><h2 id="claim-dialog-title">Pin a claim</h2><p class="muted">Write something specific enough to explain or disprove.</p></div><button class="close-button" type="button" data-close aria-label="Close">×</button></div>
-    ${atLimit ? `<div class="license-note"><strong>Your free workshop holds ${FREE_CLAIM_LIMIT} claims.</strong><br>Export is always free. The $12 lifetime unlock removes the claim limit. <a href="/upgrade" data-route>See the unlock</a>.</div>` : `<form id="claim-form"><div id="claim-errors" class="error-box" role="alert"></div><div class="field"><label for="claim-title">Claim <span aria-hidden="true">*</span></label><input id="claim-title" name="title" type="text" maxlength="160" required aria-describedby="claim-title-hint"><p class="field-hint" id="claim-title-hint">Example: “Gradient descent follows the steepest local decrease.”</p></div><div class="field"><label for="claim-context">What should your explanation cover?</label><textarea id="claim-context" name="context" maxlength="600"></textarea></div>${map.claims.length ? `<fieldset><legend>What must be understood first?</legend><div class="check-list">${map.claims.map((claim) => `<label class="check-option"><input type="checkbox" name="prerequisite" value="${escapeHtml(claim.id)}"><span>${escapeHtml(claim.title)}</span></label>`).join('')}</div></fieldset>` : ''}<div class="button-row"><button class="button primary" type="submit">Pin this claim</button><button class="button quiet" type="button" data-close>Cancel</button></div></form>`}
+    ${atLimit ? `<div class="license-note"><strong>This map holds up to ${FREE_CLAIM_LIMIT} claims.</strong><br>Export JSON or CSV before clearing browser data, then start a new focused map.</div>` : `<form id="claim-form"><div id="claim-errors" class="error-box" role="alert"></div><div class="field"><label for="claim-title">Claim <span aria-hidden="true">*</span></label><input id="claim-title" name="title" type="text" maxlength="160" required aria-describedby="claim-title-hint"><p class="field-hint" id="claim-title-hint">Example: “Gradient descent follows the steepest local decrease.”</p></div><div class="field"><label for="claim-context">What should your explanation cover?</label><textarea id="claim-context" name="context" maxlength="600"></textarea></div>${map.claims.length ? `<fieldset><legend>What must be understood first?</legend><div class="check-list">${map.claims.map((claim) => `<label class="check-option"><input type="checkbox" name="prerequisite" value="${escapeHtml(claim.id)}"><span>${escapeHtml(claim.title)}</span></label>`).join('')}</div></fieldset>` : ''}<div class="button-row"><button class="button primary" type="submit">Pin this claim</button><button class="button quiet" type="button" data-close>Cancel</button></div></form>`}
   </div></dialog>`;
 }
 
@@ -210,29 +192,22 @@ function rehearsalDialog(): string {
     <div class="field"><label for="teach-back">Teach it back from memory <span aria-hidden="true">*</span></label><textarea id="teach-back" maxlength="5000" required aria-describedby="teach-hint">${escapeHtml(claim.teachBack)}</textarea><p class="field-hint" id="teach-hint">What is it, why does it work, and how would you show it?</p></div>
     <div class="field"><label for="counterexample">Counterexample or boundary</label><textarea id="counterexample" maxlength="2000" aria-describedby="counter-hint">${escapeHtml(claim.counterexample)}</textarea><p class="field-hint" id="counter-hint">When would the claim fail, change, or stop applying? Required for “can explain.”</p></div>
     <fieldset class="rehearsal-step"><legend>What can you produce right now?</legend><div class="status-choices">${(['explain', 'recognize', 'blocked'] as ClaimStatus[]).map((status) => `<div class="status-choice"><input id="status-${status}" name="status" type="radio" value="${status}" ${claim.status === status ? 'checked' : ''}><label for="status-${status}"><strong>${statusLabel(status)}</strong><small>${status === 'explain' ? 'I can teach and bound it.' : status === 'recognize' ? 'It feels familiar, but I stall.' : 'A missing piece stops me.'}</small></label></div>`).join('')}</div></fieldset>
-    <div class="field"><label for="next-probe">Next probe <span aria-hidden="true">*</span></label><textarea id="next-probe" maxlength="1000" aria-describedby="probe-hint">${escapeHtml(claim.nextProbe)}</textarea><p class="field-hint" id="probe-hint">A question, example, or prerequisite to try next—not “read more.”</p></div>
+    <div class="field"><label for="next-probe">Next question <span aria-hidden="true">*</span></label><textarea id="next-probe" maxlength="1000" aria-describedby="probe-hint">${escapeHtml(claim.nextProbe)}</textarea><p class="field-hint" id="probe-hint">A question, example, or prerequisite to try next—not “read more.”</p></div>
     <div class="button-row"><button class="button primary" type="submit">Save self-assessment</button><button class="button quiet" id="edit-claim" type="button">Edit claim</button><button class="button danger" id="delete-claim" type="button">Remove claim</button></div></form>
-    ${claim.rehearsals.length ? `<section class="history" aria-labelledby="history-title"><h3 id="history-title">Rehearsal history ${isUnlocked() ? '' : '<span class="microcopy">· latest shown on free</span>'}</h3>${(isUnlocked() ? [...claim.rehearsals].reverse() : [claim.rehearsals.at(-1)!]).map((item) => `<details><summary>${new Date(item.at).toLocaleDateString()} · ${statusLabel(item.status)}</summary><p><strong>Teach-back:</strong> ${escapeHtml(item.teachBack)}</p>${item.counterexample ? `<p><strong>Boundary:</strong> ${escapeHtml(item.counterexample)}</p>` : ''}<p><strong>Next:</strong> ${escapeHtml(item.nextProbe)}</p></details>`).join('')}</section>` : ''}
+    ${claim.rehearsals.length ? `<section class="history" aria-labelledby="history-title"><h3 id="history-title">Rehearsal history</h3>${[...claim.rehearsals].reverse().map((item) => `<details><summary>${new Date(item.at).toLocaleDateString()} · ${statusLabel(item.status)}</summary><p><strong>Teach-back:</strong> ${escapeHtml(item.teachBack)}</p>${item.counterexample ? `<p><strong>Boundary:</strong> ${escapeHtml(item.counterexample)}</p>` : ''}<p><strong>Next question:</strong> ${escapeHtml(item.nextProbe)}</p></details>`).join('')}</section>` : ''}
   </div></dialog>`;
 }
 
 function exportDialog(): string {
-  return `<dialog id="export-dialog" aria-labelledby="export-title"><div class="dialog-paper"><div class="dialog-head"><div><p class="eyebrow">Your data, your way</p><h2 id="export-title">Export or import</h2><p class="muted">JSON keeps the full map and can be restored here. CSV makes a readable table.</p></div><button class="close-button" type="button" data-close aria-label="Close">×</button></div><div id="import-errors" class="error-box" role="alert"></div><div class="button-row"><button class="button primary" id="export-json" type="button">Download JSON</button><button class="button" id="export-csv" type="button">Download CSV</button><label class="button quiet" for="import-file">Import JSON</label><input class="visually-hidden" id="import-file" type="file" accept="application/json,.json"></div><p class="field-hint">Import replaces the map after you confirm. Export is never behind the paid unlock.</p></div></dialog>`;
-}
-
-function upgradePage(): string {
-  return layout(`<main class="site-main" id="main"><section class="legal"><p class="eyebrow">One-time unlock</p><h1>Keep a larger workshop.</h1><p class="lede">The free map is complete for a focused topic. Studio is for learners who want to keep growing one private map without pruning it.</p></section><section class="upgrade-sheet">
-    <div><h2>${isUnlocked() ? 'Studio is unlocked' : 'Lifetime studio'}</h2><p class="price">$12 USD <span class="microcopy">one time</span></p><ul><li>Unlimited claim slips (free includes ${FREE_CLAIM_LIMIT})</li><li>Full rehearsal history for every claim</li><li>All future local-first workshop additions</li></ul><p class="microcopy">Core JSON/CSV export, accessibility, privacy, and the complete rehearsal flow always stay free.</p>${isUnlocked() ? '<p class="license-note">This browser has an active Studio license.</p>' : `<a class="button primary" href="${CHECKOUT_URL}">Buy lifetime studio</a>`}</div>
-    <form class="restore-form" id="restore-form"><h2>Restore a purchase</h2><p>Paste the license token from your receipt or another device.</p><div id="license-errors" class="error-box" role="alert"></div><div class="field"><label for="license-token">License token</label><input id="license-token" name="license" type="text" autocomplete="off" spellcheck="false" value="${escapeHtml(licenseToken)}"></div><button class="button" type="submit">Verify and restore</button></form>
-  </section><p class="microcopy merchant-note">Sociobot/Dodo is the merchant of record. Refunds are handled there and revoke the license. Read our <a href="/terms" data-route>terms</a> and <a href="/privacy" data-route>privacy notice</a>.</p></main>`);
+  return `<dialog id="export-dialog" aria-labelledby="export-title"><div class="dialog-paper"><div class="dialog-head"><div><p class="eyebrow">Your data, your way</p><h2 id="export-title">Export or import</h2><p class="muted">JSON keeps the full map and can be restored here. CSV makes a readable table.</p></div><button class="close-button" type="button" data-close aria-label="Close">×</button></div><div id="import-errors" class="error-box" role="alert"></div><div class="button-row"><button class="button primary" id="export-json" type="button">Download JSON</button><button class="button" id="export-csv" type="button">Download CSV</button><label class="button quiet" for="import-file">Import JSON</label><input class="visually-hidden" id="import-file" type="file" accept="application/json,.json"></div><p class="field-hint">Import replaces the map after you confirm.</p></div></dialog>`;
 }
 
 function privacyPage(): string {
-  return layout(`<main class="site-main legal" id="main"><p class="eyebrow">Plain-language policy</p><h1>Privacy</h1><p class="lede">Your knowledge map belongs in your browser, not in our database.</p><p><strong>Last updated:</strong> August 30, 2026</p><h2>What stays on your device</h2><p>Claims, prerequisites, teach-backs, counterexamples, assessments, topic name, theme choice, and your license token are stored in your browser’s local storage. We do not receive or sync this map. Exported files go only where you choose to save them. Demo data uses separate local-storage keys and is discarded when you start for real.</p><h2>Purchase verification</h2><p>If you buy or restore Studio, this app sends the license token—not your map—to the Sociobot billing API at <code>api.sociobot.in</code> to check whether it is valid. The verification result is cached for up to one day. Sociobot/Dodo is the merchant of record and processes checkout information under its own merchant obligations.</p><h2>Analytics and imagery</h2><p>This app contains no behavioral analytics, advertising trackers, third-party fonts, or runtime CDN scripts. The paper landscape was generated specifically for this product with Azure OpenAI through the Param Factory; it depicts no real person and is not used to analyze your knowledge.</p><h2>Your controls</h2><p>Use Export to keep a portable copy. Clear this site’s browser storage to erase local data. Removing browser data cannot cancel or refund a purchase; contact the merchant using the details on your receipt for that.</p><h2>Contact</h2><p>For privacy questions, email <a href="mailto:privacy@sociobot.in">privacy@sociobot.in</a>.</p></main>`);
+  return layout(`<main class="site-main legal" id="main"><p class="eyebrow">Plain-language policy</p><h1>Privacy</h1><p class="lede">Your knowledge map stays in your browser.</p><p><strong>Last updated:</strong> August 30, 2026</p><h2>What stays on your device</h2><p>Claims, prerequisites, teach-backs, counterexamples, self-assessments, the topic name, and theme choice are stored in browser local storage. We do not receive or sync this map. Exported files go only where you choose to save them. Demo changes use keys beginning with <code>demo:</code> and are discarded when you start for real.</p><h2>Analytics and imagery</h2><p>There are no accounts, analytics, advertising trackers, or third-party fonts. The app loads no scripts from other sites. The paper landscape was generated specifically for this product through the Param Factory. It depicts no real person and does not analyze your knowledge.</p><h2>Your controls</h2><p>Use Export to keep a portable copy. Clear this site’s browser storage to erase local data. Export before clearing storage or changing browsers.</p><h2>Contact</h2><p>For privacy questions, email <a href="mailto:privacy@sociobot.in">privacy@sociobot.in</a>.</p></main>`);
 }
 
 function termsPage(): string {
-  return layout(`<main class="site-main legal" id="main"><p class="eyebrow">Use agreement</p><h1>Terms</h1><p class="lede">A private thinking tool, not an authority on what you know.</p><p><strong>Last updated:</strong> August 30, 2026</p><h2>The service</h2><p>Knowledge Boundary Map lets you create a local map and record your own assessments. It does not fact-check claims, measure intelligence, certify expertise, or replace a teacher or professional advice. You are responsible for checking important information against reliable sources.</p><h2>Free use and lifetime Studio</h2><p>The free version includes up to ${FREE_CLAIM_LIMIT} claims per local map and complete rehearsal and export tools. A $12 USD one-time Studio purchase unlocks unlimited claims and full rehearsal history for the lifetime of this product. No subscription is created. Sociobot/Dodo is merchant of record; refund requests are handled there. A refunded or invalid license is automatically locked.</p><h2>Availability and data</h2><p>The app is provided “as is” without a promise of uninterrupted availability. Data is stored locally, so you should export backups. Clearing browser data, changing devices, or browser failures can remove the local map. A valid license token can be restored on another device.</p><h2>Acceptable use</h2><p>Do not interfere with the service, attempt to misuse purchase verification, or use the app unlawfully. The software is also available under its repository’s MIT license.</p><h2>Changes and contact</h2><p>Material changes will be reflected by the date above. Questions can be sent to <a href="mailto:support@sociobot.in">support@sociobot.in</a>.</p></main>`);
+  return layout(`<main class="site-main legal" id="main"><p class="eyebrow">Use agreement</p><h1>Terms</h1><p class="lede">A private thinking tool, not an authority on what you know.</p><p><strong>Last updated:</strong> August 30, 2026</p><h2>The service</h2><p>Knowledge Boundary Map lets you create a local map and record your own self-assessments. It does not fact-check claims, measure intelligence, certify expertise, or replace a teacher or professional advice. Check important information against reliable sources.</p><h2>Free use</h2><p>The app includes up to ${FREE_CLAIM_LIMIT} claims per local map, the complete rehearsal flow, and JSON and CSV export. No purchase is offered in this release.</p><h2>Availability and data</h2><p>The app is provided “as is” without a promise of uninterrupted availability. Data is stored locally, so export backups. Clearing browser data, changing devices, or browser failures can remove the local map.</p><h2>Acceptable use</h2><p>Do not interfere with the service or use the app unlawfully. The software is also available under its repository’s MIT license.</p><h2>Changes and contact</h2><p>Material changes will be reflected by the date above. Questions can be sent to <a href="mailto:support@sociobot.in">support@sociobot.in</a>.</p></main>`);
 }
 
 function notFoundPage(): string {
@@ -246,13 +221,11 @@ function route(options: RouteOptions = {}): void {
   const isMap = path === '/' || path === '/demo';
   if (path === '/privacy') app.innerHTML = privacyPage();
   else if (path === '/terms') app.innerHTML = termsPage();
-  else if (path === '/upgrade') app.innerHTML = upgradePage();
   else if (isMap) app.innerHTML = map.claims.length ? mapPage() : heroPage();
   else app.innerHTML = notFoundPage();
   bindCommon();
   if (isMap && map.claims.length) bindMap();
   if (isMap && !map.claims.length) bindHero();
-  if (path === '/upgrade') bindUpgrade();
   updateRouteMetadata(path);
   if (options.focusHeading) focusPageHeading();
   if (options.scroll === 'top') requestAnimationFrame(() => window.scrollTo(0, 0));
@@ -281,8 +254,6 @@ function syncModeWithLocation(): void {
   if (nextDemo !== demoMode) {
     demoMode = nextDemo;
     map = loadMap();
-    licenseToken = safeGet(LICENSE_KEY) ?? '';
-    licenseVerdict = readVerdict();
     selectedClaimId = '';
   }
   ensureSampleMap();
@@ -293,17 +264,36 @@ function updateRouteMetadata(path: string): void {
     ? 'Privacy — Knowledge Boundary Map'
     : path === '/terms'
       ? 'Terms — Knowledge Boundary Map'
-      : path === '/upgrade'
-        ? 'Studio — Knowledge Boundary Map'
-        : path !== '/' && path !== '/demo'
+      : path !== '/' && path !== '/demo'
           ? 'Page not found — Knowledge Boundary Map'
         : demoMode
           ? 'Demo — Knowledge Boundary Map'
-          : 'Knowledge Boundary Map — check what you can explain';
+          : 'Knowledge Boundary Map — test what you can explain';
   document.title = title;
   let canonical = document.querySelector<HTMLLinkElement>('link[rel="canonical"]');
   if (!canonical) { canonical = document.createElement('link'); canonical.rel = 'canonical'; document.head.append(canonical); }
   canonical.href = `${location.origin}${path}`;
+  const description = path === '/privacy'
+    ? 'See what Knowledge Boundary Map stores in your browser and how demo data stays separate.'
+    : path === '/terms'
+      ? 'Read the plain-language terms for Knowledge Boundary Map.'
+      : path !== '/' && path !== '/demo'
+        ? 'This Knowledge Boundary Map page could not be found.'
+        : demoMode
+          ? 'Try a completed causal-inference claim map with separate sample data.'
+          : 'Test what you can explain with private teach-backs and a prerequisite map.';
+  const setMeta = (selector: string, attribute: 'name' | 'property', value: string) => {
+    let element = document.head.querySelector<HTMLMetaElement>(selector);
+    if (!element) { element = document.createElement('meta'); element.setAttribute(attribute, selector.includes('og:') ? 'og:description' : selector.includes('twitter:') ? 'twitter:description' : 'description'); document.head.append(element); }
+    element.content = value;
+  };
+  setMeta('meta[name="description"]', 'name', description);
+  setMeta('meta[property="og:description"]', 'property', description);
+  setMeta('meta[name="twitter:description"]', 'name', description);
+  const ogTitle = document.head.querySelector<HTMLMetaElement>('meta[property="og:title"]');
+  const twitterTitle = document.head.querySelector<HTMLMetaElement>('meta[name="twitter:title"]');
+  if (ogTitle) ogTitle.content = title;
+  if (twitterTitle) twitterTitle.content = title;
   const status = document.querySelector<HTMLElement>('#route-status');
   if (status) status.textContent = title;
 }
@@ -313,8 +303,6 @@ function enterDemo(): void {
   history.pushState({}, '', '/demo');
   demoMode = true;
   map = loadMap();
-  licenseToken = safeGet(LICENSE_KEY) ?? '';
-  licenseVerdict = readVerdict();
   ensureSampleMap();
   route({ scroll: 'top' });
   showToast('Demo loaded. Your real map is untouched.');
@@ -330,12 +318,10 @@ function resetDemo(): void {
 
 function startForReal(): void {
   try {
-    [STORAGE_KEY, THEME_KEY, LICENSE_KEY, VERDICT_KEY].forEach((key) => localStorage.removeItem(scopedKey(key, true)));
+    [STORAGE_KEY, THEME_KEY].forEach((key) => localStorage.removeItem(scopedKey(key, true)));
   } catch { storageAvailable = false; }
   demoMode = false;
   map = loadMap();
-  licenseToken = safeGet(LICENSE_KEY) ?? '';
-  licenseVerdict = readVerdict();
   selectedClaimId = '';
   rememberScrollPosition();
   history.pushState({ scrollX: 0, scrollY: 0 }, '', '/');
@@ -404,7 +390,7 @@ function openDialog(id: string): void {
 }
 
 function openClaimDialog(): void {
-  if (map.claims.length >= FREE_CLAIM_LIMIT && !isUnlocked()) { openDialog('claim-dialog'); return; }
+  if (map.claims.length >= FREE_CLAIM_LIMIT) { openDialog('claim-dialog'); return; }
   openDialog('claim-dialog');
   setTimeout(() => document.querySelector<HTMLInputElement>('#claim-title')?.focus(), 0);
 }
@@ -559,53 +545,6 @@ function drawConnections(): void {
   })).join('');
 }
 
-function bindUpgrade(): void {
-  document.querySelector<HTMLFormElement>('#restore-form')?.addEventListener('submit', async (event) => {
-    event.preventDefault();
-    const form = event.currentTarget as HTMLFormElement;
-    const token = String(new FormData(form).get('license') ?? '').trim();
-    if (!token) { setErrors('license-errors', ['Paste the license token from your receipt.']); return; }
-    const submit = form.querySelector<HTMLButtonElement>('button[type="submit"]')!; submit.disabled = true; submit.textContent = 'Checking…';
-    const check = await requestLicenseVerdict(token, true);
-    if (check.verdict?.valid) {
-      licenseToken = token; licenseVerdict = check.verdict; licenseServiceUnavailable = false;
-      safeSet(LICENSE_KEY, token); safeSet(VERDICT_KEY, JSON.stringify(check.verdict));
-      route(); showToast('Studio restored on this browser.');
-    }
-    else {
-      const message = check.unavailable
-        ? navigator.onLine
-          ? 'License verification is unavailable right now. Your map still works. Try again in a moment.'
-          : 'You appear to be offline. Connect and try restoring again.'
-        : 'That license is not active for this product. Check the token and try again.';
-      setErrors('license-errors', [message]); submit.disabled = false; submit.textContent = 'Verify and restore';
-    }
-  });
-}
-
-async function requestLicenseVerdict(token: string, force = false): Promise<LicenseCheck> {
-  const cachedForToken = licenseVerdict?.token === token ? licenseVerdict : null;
-  if (!force && cachedForToken && Date.now() - cachedForToken.checkedAt < 86_400_000) return { verdict: cachedForToken, unavailable: false };
-  try {
-    const response = await fetch(`${BILLING_BASE}/api/v1/products/knowledge-boundary-map/verify?license=${encodeURIComponent(token)}`, { headers: { Accept: 'application/json' } });
-    const result = await response.json() as { valid?: boolean; reason?: string };
-    if (!response.ok || typeof result.valid !== 'boolean') throw new Error('License verification is unavailable.');
-    return { verdict: { token, valid: result.valid, reason: result.reason, checkedAt: Date.now() }, unavailable: false };
-  } catch { return { verdict: cachedForToken, unavailable: true }; }
-}
-
-async function refreshLicense(force = false): Promise<void> {
-  if (!licenseToken) return;
-  const before = JSON.stringify(licenseVerdict);
-  const check = await requestLicenseVerdict(licenseToken, force);
-  licenseServiceUnavailable = check.unavailable;
-  if (check.verdict) {
-    licenseVerdict = check.verdict;
-    safeSet(VERDICT_KEY, JSON.stringify(check.verdict));
-  }
-  if (before !== JSON.stringify(licenseVerdict) || check.unavailable) route();
-}
-
 function setErrors(id: string, errors: string[]): void {
   const box = document.querySelector<HTMLElement>(`#${id}`);
   if (box) { box.innerHTML = `<ul>${errors.map((error) => `<li>${escapeHtml(error)}</li>`).join('')}</ul>`; box.focus(); }
@@ -628,21 +567,6 @@ function applyTheme(): void {
   document.documentElement.dataset.theme = theme;
 }
 
-async function initializeLicense(): Promise<void> {
-  const params = new URLSearchParams(location.search);
-  const incoming = params.get('license')?.trim();
-  if (incoming) {
-    if (licenseVerdict?.token !== incoming) {
-      licenseVerdict = null;
-      safeRemove(VERDICT_KEY);
-    }
-    licenseToken = incoming; safeSet(LICENSE_KEY, incoming); params.delete('license');
-    history.replaceState(history.state, '', `${location.pathname}${params.size ? `?${params}` : ''}${location.hash}`);
-    route();
-  }
-  await refreshLicense();
-}
-
 window.history.scrollRestoration = 'manual';
 window.addEventListener('popstate', (event) => {
   const state = event.state as { scrollX?: unknown; scrollY?: unknown } | null;
@@ -650,7 +574,7 @@ window.addEventListener('popstate', (event) => {
   const y = typeof state?.scrollY === 'number' ? state.scrollY : 0;
   route({ scroll: { x, y }, focusHeading: true });
 });
-window.addEventListener('online', () => { updateOnlineState(); void refreshLicense(true); });
+window.addEventListener('online', updateOnlineState);
 window.addEventListener('offline', updateOnlineState);
 window.addEventListener('resize', () => requestAnimationFrame(drawConnections));
 document.addEventListener('keydown', (event) => {
@@ -658,5 +582,5 @@ document.addEventListener('keydown', (event) => {
   if (event.key.toLowerCase() === 'n' && !['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName) && !document.querySelector('dialog[open]') && ['/', '/demo'].includes(location.pathname)) { event.preventDefault(); openClaimDialog(); }
 });
 
-applyTheme(); route(); void initializeLicense();
+applyTheme(); route();
 if ('serviceWorker' in navigator && import.meta.env.PROD) window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' }).catch(() => undefined));

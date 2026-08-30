@@ -52,7 +52,7 @@ export function validateRehearsal(status: ClaimStatus, teachBack: string, counte
   const errors: string[] = [];
   if (!teachBack.trim()) errors.push('Write the explanation you could produce without looking it up.');
   if (status === 'explain' && !counterexample.trim()) errors.push('Add a counterexample or boundary before marking this “can explain.”');
-  if (status !== 'untested' && !nextProbe.trim()) errors.push('Choose a next probe so this result leads somewhere.');
+  if (status !== 'untested' && !nextProbe.trim()) errors.push('Choose a next question so this result leads somewhere.');
   return errors;
 }
 
@@ -112,7 +112,7 @@ export function sanitizeMap(value: unknown): MapData {
 
 export function asCsv(data: MapData): string {
   const cell = (value: string) => `"${value.replaceAll('"', '""')}"`;
-  const rows = [['Claim', 'Status', 'Prerequisites', 'Teach-back', 'Counterexample', 'Next probe', 'Last rehearsed']];
+  const rows = [['Claim', 'Status', 'Prerequisites', 'Teach-back', 'Counterexample', 'Next question', 'Last rehearsed']];
   const byId = new Map(data.claims.map((claim) => [claim.id, claim.title]));
   data.claims.forEach((claim) => rows.push([
     claim.title,

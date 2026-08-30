@@ -2,10 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { asCsv, makeClaim, recordRehearsal, sanitizeMap, validateRehearsal } from '../src/model';
 
 describe('claim rehearsal', () => {
-  it('requires a produced explanation and next probe', () => {
+  it('requires a produced explanation and next question', () => {
     expect(validateRehearsal('recognize', '', '', '')).toEqual([
       'Write the explanation you could produce without looking it up.',
-      'Choose a next probe so this result leads somewhere.',
+      'Choose a next question so this result leads somewhere.',
     ]);
   });
 

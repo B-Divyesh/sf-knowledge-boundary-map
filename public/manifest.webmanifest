@@ -1,7 +1,7 @@
 {
   "name": "Knowledge Boundary Map",
   "short_name": "Boundary Map",
-  "description": "A private, local-first claim and teach-back map.",
+  "description": "A private claim and teach-back map stored in your browser.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#f4ebd9",

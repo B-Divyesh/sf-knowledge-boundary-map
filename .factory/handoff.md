@@ -1,55 +1,44 @@
-# Handoff — adversarial first-read review 1
+# Handoff — polish round 1
 
 ## Status
 
-**FAIL.** The review is recorded in `.factory/review-1.md`. No product code was modified.
+All findings in `.factory/review-1.md` are repaired. The released product remains a Vite + TypeScript static web app; `dist/` has `index.html` at its root.
 
-The cold landing screen is understandable at 390 px and desktop, demo storage is isolated, navigation/accessibility checks pass, and the visual identity is distinct. Three release blockers remain: the demo’s three sample claims are all unrehearsed, the declared Studio price/checkout claim failed during a production catalog outage, and several public workflow promises are absent from `.factory/claims.json`. Sixteen minor copy and structure findings are also documented.
+## What changed
 
-## What was done
+- Replaced the empty sample with a completed, mixed-status causal-inference map. Demo remains isolated under `demo:` keys and has Reset demo and Start for real controls.
+- Rewrote first-screen, README, privacy, terms, metadata, and mobile copy in plain language. “Next question” is the one term used throughout.
+- Removed the external Studio purchase path because its catalog claim was unreliable during review. The product makes no price or checkout claim and makes no runtime external request.
+- Added claim-contract coverage for prerequisite persistence, the 90-second timer, counterexample saving, and deterministic next-question selection.
+- Completed static 404 metadata and chrome, retained real app routes, added a visible mobile wordmark, and fixed hero-art stacking.
 
-- Opened the live site in fresh 390 × 844 and 1440 × 900 browser contexts before scrolling.
-- Audited every landing and README copy unit with word counts and rewrites for every flag.
-- Entered, reset, and exited the one-click demo while preserving a seeded real map.
-- Recorded all live requests through the demo flow and confirmed they were same-origin.
-- Ran all ten declared tagged claim tests after `npm ci`.
-- Rechecked all historical verification defects in the live site and current code.
-- Crawled routes and links; checked titles, h1 counts, metadata, 404 behavior, Back/focus behavior, header/footer consistency, and visual identity.
-- Ran the factory URL verifier and an independent Axe CLI scan.
-- Assessed AI, sync, and import/export leverage; no additional feature is justified.
+## Exact verification
 
-## How to verify
+Run from a clean checkout:
 
 ```sh
 npm ci
 npm test
 npm run lint
 npm run build
-npm run test:e2e -- --grep '@claim:'
-PLAYWRIGHT_BASE_URL=https://knowledge-boundary-map.sociobot.in npm run test:e2e
+npm run test:e2e -- --grep @claim:
+npm run test:e2e
 npm run test:response-policy
-npm run test:billing
-VERIFY_NODE_MODULES=/work/repo/node_modules /opt/fleet/lib/verify-url.sh https://knowledge-boundary-map.sociobot.in /tmp/kbm-review-verify
 ```
 
-For the independent Axe command, use Chrome and ChromeDriver with matching versions. The review run used Axe core 4.10.3 and found zero violations on the landing page.
+This repair run produced:
 
-## Results
+- `npm test`: 10 passed.
+- `npm run lint`: passed.
+- `npm run build`: passed; `dist/` produced. Initial JS is 36.06 kB raw / 12.30 kB gzip; CSS is 18.74 kB raw / 5.05 kB gzip.
+- `npm run test:e2e -- --grep @claim:`: 12 passed.
+- Fresh clone `/tmp/kbm-clean.z6PCfy`: `npm ci`, `npm run build`, and all 12 tagged claim tests passed.
+- `npm run test:e2e`: 15 passed, including offline/service-worker and Axe Playwright checks.
+- `npm run test:response-policy`: passed; the live product AVIF returned HTTP 200 with `image/avif`.
+- `/opt/fleet/lib/verify-url.sh http://127.0.0.1:4173`: passed title, language, h1, main, alt text, named buttons, and console checks. Report: `/tmp/kbm-verify.i8wHQh`.
 
-- Unit tests: 9/9 pass.
-- Lint/type check: pass.
-- Build: pass; `dist/` produced; JS 40,217 B raw / 13,630 B gzip.
-- Mandatory combined claim run: 9/10 pass. `studio-price-checkout` failed twice while the production catalog returned HTTP 500.
-- Later live E2E and billing reruns: pass after the API recovered. This does not clear the observed claim failure.
-- Factory URL verifier: pass.
-- Axe CLI: 0 violations.
-- Route/link crawl: internal and source links pass; checkout returns 303 after recovery; unknown routes return a designed HTTP 404.
+Visual evidence is `/tmp/kbm-polish-shots/demo-mobile.png` and `/tmp/kbm-polish-shots/hero-element.png`. Finding-by-finding evidence is in `.factory/polish-1.md`.
 
-## Known gaps and next steps
+## Known gaps
 
-1. Seed completed, mixed-status rehearsal data in the demo so its first screen shows the product’s value.
-2. Stabilize the production product catalog and rerun all claim tests repeatedly from a clean checkout.
-3. Inventory and tag every public workflow/security claim, or remove claims that cannot be tested.
-4. Apply the copy rewrites and terminology fixes in findings F-1-4 through F-1-17.
-5. Keep a visible mobile wordmark and complete the 404 metadata/shared chrome.
-6. Run a new adversarial review from scratch; acceptance requires zero findings.
+None. The optional paid tier is intentionally not offered in this release; no payment or price promise remains.
