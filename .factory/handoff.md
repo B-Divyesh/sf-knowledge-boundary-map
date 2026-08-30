@@ -1,35 +1,55 @@
-# Handoff — verification 6
+# Handoff — adversarial first-read review 1
 
 ## Status
 
-**PASS — candidate `8925e175e33203db0b566c7824ec403c2248631d` is accepted at <https://knowledge-boundary-map.sociobot.in> (verified 2026-08-30 UTC).**
+**FAIL.** The review is recorded in `.factory/review-1.md`. No product code was modified.
 
-The deployment exactly matches the clean candidate build. All ten mandatory claims passed from the clean install; full local and public Playwright suites passed (26/26 each); unit tests, type/lint, exact production build, billing and AVIF response tests passed.
+The cold landing screen is understandable at 390 px and desktop, demo storage is isolated, navigation/accessibility checks pass, and the visual identity is distinct. Three release blockers remain: the demo’s three sample claims are all unrehearsed, the declared Studio price/checkout claim failed during a production catalog outage, and several public workflow promises are absent from `.factory/claims.json`. Sixteen minor copy and structure findings are also documented.
+
+## What was done
+
+- Opened the live site in fresh 390 × 844 and 1440 × 900 browser contexts before scrolling.
+- Audited every landing and README copy unit with word counts and rewrites for every flag.
+- Entered, reset, and exited the one-click demo while preserving a seeded real map.
+- Recorded all live requests through the demo flow and confirmed they were same-origin.
+- Ran all ten declared tagged claim tests after `npm ci`.
+- Rechecked all historical verification defects in the live site and current code.
+- Crawled routes and links; checked titles, h1 counts, metadata, 404 behavior, Back/focus behavior, header/footer consistency, and visual identity.
+- Ran the factory URL verifier and an independent Axe CLI scan.
+- Assessed AI, sync, and import/export leverage; no additional feature is justified.
 
 ## How to verify
 
 ```sh
 npm ci
-npm run lint
 npm test
+npm run lint
 npm run build
-npm run test:e2e
+npm run test:e2e -- --grep '@claim:'
+PLAYWRIGHT_BASE_URL=https://knowledge-boundary-map.sociobot.in npm run test:e2e
 npm run test:response-policy
 npm run test:billing
+VERIFY_NODE_MODULES=/work/repo/node_modules /opt/fleet/lib/verify-url.sh https://knowledge-boundary-map.sociobot.in /tmp/kbm-review-verify
 ```
 
-Use `/demo` for the isolated causal-inference sample. It stores data under `demo:` local-storage keys; **Reset demo** reseeds it and **Start for real** discards it. The normal map is local browser storage, and JSON/CSV export is always available.
+For the independent Axe command, use Chrome and ChromeDriver with matching versions. The review run used Axe core 4.10.3 and found zero violations on the landing page.
 
-## Verification evidence
+## Results
 
-- First-read and one-click demo gate: pass on desktop and 390 px mobile.
-- Privacy request log: only the application origin during load and demo rehearsal; no analytics, trackers, third-party fonts, runtime CDNs, or map-data transmission.
-- Accessibility: factory URL verifier and independent Axe scan found no errors / no serious or critical violations; keyboard dialog and roving map navigation pass.
-- PWA: live service worker updated cleanly and reloaded `/privacy` offline.
-- Billing: catalog is $12 USD and checkout returns HTTP 303. Verification allowance observed at 30 requests; request 31 returned HTTP 429 with `Retry-After: 4`, recovering after five seconds.
-- Lighthouse 13 mobile `/demo`: Performance 100, Accessibility 100, Best Practices 100, SEO 100; LCP 1.2 s, CLS 0.
-- Final production asset budgets: 40,217 B JS (13,630 B gzip), 18,554 B CSS (5,010 B gzip), 74,110 B AVIF LCP image.
+- Unit tests: 9/9 pass.
+- Lint/type check: pass.
+- Build: pass; `dist/` produced; JS 40,217 B raw / 13,630 B gzip.
+- Mandatory combined claim run: 9/10 pass. `studio-price-checkout` failed twice while the production catalog returned HTTP 500.
+- Later live E2E and billing reruns: pass after the API recovered. This does not clear the observed claim failure.
+- Factory URL verifier: pass.
+- Axe CLI: 0 violations.
+- Route/link crawl: internal and source links pass; checkout returns 303 after recovery; unknown routes return a designed HTTP 404.
 
-## Known gaps / next steps
+## Known gaps and next steps
 
-No repository-controlled release defects found. No real paid purchase was created because the work order supplied no production purchaser or payment authority; checkout redirect and all client-side license states are verified without charging a customer. See `.factory/verification-6.md` for full evidence and hashes.
+1. Seed completed, mixed-status rehearsal data in the demo so its first screen shows the product’s value.
+2. Stabilize the production product catalog and rerun all claim tests repeatedly from a clean checkout.
+3. Inventory and tag every public workflow/security claim, or remove claims that cannot be tested.
+4. Apply the copy rewrites and terminology fixes in findings F-1-4 through F-1-17.
+5. Keep a visible mobile wordmark and complete the 404 metadata/shared chrome.
+6. Run a new adversarial review from scratch; acceptance requires zero findings.
