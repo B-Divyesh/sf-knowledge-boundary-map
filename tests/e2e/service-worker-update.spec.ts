@@ -31,7 +31,7 @@ test('a controlled pre-repair client updates to this build and keeps it offline'
         if (path === '/old.js') return send(response, 200, "document.documentElement.dataset.shell='old'", 'text/javascript');
         return send(response, 200, oldIndex, 'text/html');
       }
-      const requested = path === '/' || ['/privacy', '/terms', '/upgrade'].includes(path) ? 'index.html' : normalize(path).replace(/^[/\\]+/, '');
+      const requested = path === '/' || ['/demo', '/privacy', '/terms', '/upgrade'].includes(path) ? 'index.html' : normalize(path).replace(/^[/\\]+/, '');
       if (requested.startsWith('..')) return send(response, 404, 'Not found', 'text/plain');
       const body = await readFile(join(distRoot, requested));
       const contentType = ({ '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.json': 'application/json', '.webmanifest': 'application/manifest+json', '.avif': 'image/avif', '.webp': 'image/webp' } as Record<string, string>)[extname(requested)] ?? 'application/octet-stream';
@@ -65,14 +65,14 @@ test('a controlled pre-repair client updates to this build and keeps it offline'
       await changed;
     });
     await page.reload();
-    await expect(page.getByRole('heading', { name: 'Find the edge of what you can explain.' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Check what you can explain.' })).toBeVisible();
     const cachesAfterUpdate = await page.evaluate(() => caches.keys());
     expect(cachesAfterUpdate).not.toContain('kbm-shell-v4');
     expect(cachesAfterUpdate.some((name) => /^kbm-shell-[a-f0-9]{12}$/.test(name))).toBe(true);
 
     await context.setOffline(true);
     await page.reload({ waitUntil: 'domcontentloaded' });
-    await expect(page.getByRole('heading', { name: 'Find the edge of what you can explain.' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Check what you can explain.' })).toBeVisible();
     await expect(page.getByText('You’re offline. Your map still works and stays on this device.')).toBeVisible();
   } finally {
     await context.close();

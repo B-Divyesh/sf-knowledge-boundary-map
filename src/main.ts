@@ -11,6 +11,7 @@ const CHECKOUT_URL = `${BILLING_BASE}/api/v1/products/knowledge-boundary-map/che
 type LicenseVerdict = { token: string; valid: boolean; checkedAt: number; reason?: string };
 
 let storageAvailable = true;
+let demoMode = isDemoLocation();
 let map: MapData = loadMap();
 let licenseToken = safeGet(LICENSE_KEY) ?? '';
 let licenseVerdict = readVerdict();
@@ -22,16 +23,24 @@ let toastTimer = 0;
 
 const app = document.querySelector<HTMLDivElement>('#app')!;
 
+function isDemoLocation(): boolean {
+  return location.pathname.replace(/\/$/, '') === '/demo' || new URLSearchParams(location.search).get('demo') === '1';
+}
+
+function scopedKey(key: string, demo = demoMode): string {
+  return demo ? `demo:${key}` : key;
+}
+
 function safeGet(key: string): string | null {
-  try { return localStorage.getItem(key); } catch { storageAvailable = false; return null; }
+  try { return localStorage.getItem(scopedKey(key)); } catch { storageAvailable = false; return null; }
 }
 
 function safeSet(key: string, value: string): boolean {
-  try { localStorage.setItem(key, value); return true; } catch { storageAvailable = false; return false; }
+  try { localStorage.setItem(scopedKey(key), value); return true; } catch { storageAvailable = false; return false; }
 }
 
 function safeRemove(key: string): boolean {
-  try { localStorage.removeItem(key); return true; } catch { storageAvailable = false; return false; }
+  try { localStorage.removeItem(scopedKey(key)); return true; } catch { storageAvailable = false; return false; }
 }
 
 function loadMap(): MapData {
@@ -46,6 +55,20 @@ function loadMap(): MapData {
 function saveMap(): void {
   const saved = safeSet(STORAGE_KEY, JSON.stringify(map));
   if (!saved) showToast('This browser blocked local storage. Export before leaving this page.');
+}
+
+function sampleMap(): MapData {
+  const first = makeClaim('A correlation does not by itself show causation', 'Explain at least two reasons correlated variables can move together.');
+  const second = makeClaim('A confounder can affect both measured variables', 'Give a concrete example and show the hidden path.');
+  const third = makeClaim('Random assignment reduces systematic confounding', 'Explain what random assignment does and does not guarantee.', [first.id, second.id]);
+  return { version: 1, topic: 'Causal inference basics', claims: [first, second, third] };
+}
+
+function ensureSampleMap(): void {
+  if (demoMode && !map.claims.length) {
+    map = sampleMap();
+    safeSet(STORAGE_KEY, JSON.stringify(map));
+  }
 }
 
 function readVerdict(): LicenseVerdict | null {
@@ -84,32 +107,39 @@ function icon(name: 'lock' | 'moon' | 'sun' | 'plus' | 'download'): string {
   return `<svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${paths[name]}</svg>`;
 }
 
+function routeHref(path: string): string {
+  if (!demoMode || path === '/demo') return path;
+  return `${path}${path.includes('?') ? '&' : '?'}demo=1`;
+}
+
 function header(): string {
   const dark = document.documentElement.dataset.theme === 'dark';
   return `<header class="site-header">
-    <a class="brand" href="/" data-route aria-label="Knowledge Boundary Map home"><span class="brand-mark" aria-hidden="true">↗</span><span>Knowledge Boundary Map</span></a>
+    <a class="brand" href="${routeHref('/')}" data-route aria-label="Knowledge Boundary Map home"><span class="brand-mark" aria-hidden="true">↗</span><span>Knowledge Boundary Map</span></a>
     <nav class="header-actions" aria-label="Primary navigation">
-      <a class="nav-link" href="/upgrade" data-route>${isUnlocked() ? 'Studio unlocked' : 'Lifetime studio'}</a>
+      <a class="nav-link" href="${routeHref('/demo')}" data-route>Demo</a>
+      <a class="nav-link" href="${routeHref('/upgrade')}" data-route>${isUnlocked() ? 'Studio unlocked' : 'Lifetime studio'}</a>
       <button class="icon-button" id="theme-toggle" type="button" aria-label="Use ${dark ? 'light' : 'dark'} theme">${icon(dark ? 'sun' : 'moon')}</button>
     </nav>
   </header><p class="offline-banner${navigator.onLine ? '' : ' visible'}" role="status">You’re offline. Your map still works and stays on this device.</p>`;
 }
 
 function footer(): string {
-  return `<footer class="site-footer"><span>Private by default · Stored in this browser · No account</span><nav class="footer-links" aria-label="Legal"><a href="/privacy" data-route>Privacy</a><a href="/terms" data-route>Terms</a><a href="https://github.com/B-Divyesh/sf-knowledge-boundary-map" rel="noreferrer">Source</a></nav><span>Original AI-generated paper artwork · <a href="/privacy" data-route>details</a></span></footer>`;
+  return `<footer class="site-footer"><span>Private by default · Stored in this browser · No account</span><nav class="footer-links" aria-label="Legal"><a href="${routeHref('/privacy')}" data-route>Privacy</a><a href="${routeHref('/terms')}" data-route>Terms</a><a href="https://github.com/B-Divyesh/sf-knowledge-boundary-map" rel="noreferrer">Source</a></nav><span>Original AI-generated paper artwork · <a href="${routeHref('/privacy')}" data-route>details</a></span></footer>`;
 }
 
 function layout(content: string): string {
-  return `<div class="shell">${header()}${!storageAvailable ? '<p class="license-note storage-warning" role="alert">Local storage is unavailable. Your changes may not survive a refresh; export a copy before leaving.</p>' : ''}${content}${footer()}<div class="toast" id="toast" role="status" aria-live="polite"><span id="toast-message"></span><button type="button" id="toast-action" hidden>Undo</button></div></div>`;
+  const demoBanner = demoMode ? '<aside class="demo-banner" aria-label="Demo controls"><span><strong>Demo</strong> — sample data, nothing is saved to your real map.</span><span><button class="demo-action" id="reset-demo" type="button">Reset demo</button><button class="demo-action" id="start-real" type="button">Start for real</button></span></aside>' : '';
+  return `<div class="shell">${header()}${demoBanner}${!storageAvailable ? '<p class="license-note storage-warning" role="alert">Local storage is unavailable. Your changes may not survive a refresh; export a copy before leaving.</p>' : ''}${content}${footer()}<p class="visually-hidden" id="route-status" aria-live="polite"></p><div class="toast" id="toast" role="status" aria-live="polite"><span id="toast-message"></span><button type="button" id="toast-action" hidden>Undo</button></div></div>`;
 }
 
 function heroPage(): string {
   return layout(`<main class="site-main" id="main"><section class="hero">
-    <div class="hero-copy"><p class="eyebrow">Your notes say “familiar.” Can you teach it?</p><h1>Find the edge of what you can explain.</h1>
-    <p class="lede">Pin a claim, connect what it depends on, then try a 90-second teach-back. You decide whether you can explain it, only recognize it, or found a block.</p>
-    <div class="hero-actions"><button class="button primary" id="start-map" type="button">${icon('plus')} Pin your first claim</button><button class="button quiet" id="load-example" type="button">Try a three-claim example</button></div>
-    <p class="privacy-note">${icon('lock')} <span>No sign-up and no cloud sync. Your map stays in this browser unless you export it.</span></p></div>
-    <figure class="hero-art"><picture><source srcset="/assets/boundary-diorama.avif" type="image/avif"><source srcset="/assets/boundary-diorama.webp" type="image/webp"><img src="/assets/boundary-diorama.webp" width="1152" height="768" fetchpriority="high" decoding="async" alt="Layered paper hills form a path from blue fog past an orange obstacle toward a clear golden marker."></picture><figcaption>A boundary is useful when it becomes your next route—not a verdict about intelligence.</figcaption></figure>
+    <div class="hero-copy"><p class="eyebrow">For self-learners testing familiar topics</p><h1>Check what you can explain.</h1>
+    <p class="lede">For self-learners testing what feels familiar. Pin a claim, teach it back, and choose your next question.</p>
+    <div class="hero-actions"><button class="button primary" id="load-example" type="button">Try it with sample data</button><button class="button quiet" id="start-map" type="button">${icon('plus')} Pin your first claim</button></div>
+    <ul class="hero-facts"><li>${icon('lock')} <span>Private: stored in this browser.</span></li><li>Offline: works after your first visit.</li><li>Free: 12 claims; Studio is $12 once.</li></ul></div>
+    <figure class="hero-art"><picture><source srcset="/assets/boundary-diorama.avif" type="image/avif"><source srcset="/assets/boundary-diorama.webp" type="image/webp"><img src="/assets/boundary-diorama.webp" width="1152" height="768" fetchpriority="high" decoding="async" alt="Layered paper hills form a path from blue fog past an orange obstacle toward a clear golden marker."></picture><figcaption>Use the map to choose what to study next, not to score your intelligence.</figcaption></figure>
   </section>${claimDialog()}</main>`);
 }
 
@@ -186,30 +216,99 @@ function upgradePage(): string {
 }
 
 function privacyPage(): string {
-  return layout(`<main class="site-main legal" id="main"><p class="eyebrow">Plain-language policy</p><h1>Privacy</h1><p class="lede">Your knowledge map belongs in your browser, not in our database.</p><p><strong>Last updated:</strong> August 28, 2026</p><h2>What stays on your device</h2><p>Claims, prerequisites, teach-backs, counterexamples, assessments, topic name, theme choice, and your license token are stored in your browser’s local storage. We do not receive or sync this map. Exported files go only where you choose to save them.</p><h2>Purchase verification</h2><p>If you buy or restore Studio, this app sends the license token—not your map—to the Sociobot billing API at <code>api.sociobot.in</code> to check whether it is valid. The verification result is cached for up to one day. Sociobot/Dodo is the merchant of record and processes checkout information under its own merchant obligations.</p><h2>Analytics and imagery</h2><p>This app contains no behavioral analytics, advertising trackers, third-party fonts, or runtime CDN scripts. The paper landscape was generated specifically for this product with Azure OpenAI through the Param Factory; it depicts no real person and is not used to analyze your knowledge.</p><h2>Your controls</h2><p>Use Export to keep a portable copy. Clear this site’s browser storage to erase local data. Removing browser data cannot cancel or refund a purchase; contact the merchant using the details on your receipt for that.</p><h2>Contact</h2><p>For privacy questions, email <a href="mailto:privacy@sociobot.in">privacy@sociobot.in</a>.</p></main>`);
+  return layout(`<main class="site-main legal" id="main"><p class="eyebrow">Plain-language policy</p><h1>Privacy</h1><p class="lede">Your knowledge map belongs in your browser, not in our database.</p><p><strong>Last updated:</strong> August 30, 2026</p><h2>What stays on your device</h2><p>Claims, prerequisites, teach-backs, counterexamples, assessments, topic name, theme choice, and your license token are stored in your browser’s local storage. We do not receive or sync this map. Exported files go only where you choose to save them. Demo data uses separate local-storage keys and is discarded when you start for real.</p><h2>Purchase verification</h2><p>If you buy or restore Studio, this app sends the license token—not your map—to the Sociobot billing API at <code>api.sociobot.in</code> to check whether it is valid. The verification result is cached for up to one day. Sociobot/Dodo is the merchant of record and processes checkout information under its own merchant obligations.</p><h2>Analytics and imagery</h2><p>This app contains no behavioral analytics, advertising trackers, third-party fonts, or runtime CDN scripts. The paper landscape was generated specifically for this product with Azure OpenAI through the Param Factory; it depicts no real person and is not used to analyze your knowledge.</p><h2>Your controls</h2><p>Use Export to keep a portable copy. Clear this site’s browser storage to erase local data. Removing browser data cannot cancel or refund a purchase; contact the merchant using the details on your receipt for that.</p><h2>Contact</h2><p>For privacy questions, email <a href="mailto:privacy@sociobot.in">privacy@sociobot.in</a>.</p></main>`);
 }
 
 function termsPage(): string {
-  return layout(`<main class="site-main legal" id="main"><p class="eyebrow">Use agreement</p><h1>Terms</h1><p class="lede">A private thinking tool, not an authority on what you know.</p><p><strong>Last updated:</strong> August 28, 2026</p><h2>The service</h2><p>Knowledge Boundary Map lets you create a local map and record your own assessments. It does not fact-check claims, measure intelligence, certify expertise, or replace a teacher or professional advice. You are responsible for checking important information against reliable sources.</p><h2>Free use and lifetime Studio</h2><p>The free version includes up to ${FREE_CLAIM_LIMIT} claims per local map and complete rehearsal and export tools. A $12 USD one-time Studio purchase unlocks unlimited claims and full rehearsal history for the lifetime of this product. No subscription is created. Sociobot/Dodo is merchant of record; refund requests are handled there. A refunded or invalid license is automatically locked.</p><h2>Availability and data</h2><p>The app is provided “as is” without a promise of uninterrupted availability. Data is stored locally, so you should export backups. Clearing browser data, changing devices, or browser failures can remove the local map. A valid license token can be restored on another device.</p><h2>Acceptable use</h2><p>Do not interfere with the service, attempt to misuse purchase verification, or use the app unlawfully. The software is also available under its repository’s MIT license.</p><h2>Changes and contact</h2><p>Material changes will be reflected by the date above. Questions can be sent to <a href="mailto:support@sociobot.in">support@sociobot.in</a>.</p></main>`);
+  return layout(`<main class="site-main legal" id="main"><p class="eyebrow">Use agreement</p><h1>Terms</h1><p class="lede">A private thinking tool, not an authority on what you know.</p><p><strong>Last updated:</strong> August 30, 2026</p><h2>The service</h2><p>Knowledge Boundary Map lets you create a local map and record your own assessments. It does not fact-check claims, measure intelligence, certify expertise, or replace a teacher or professional advice. You are responsible for checking important information against reliable sources.</p><h2>Free use and lifetime Studio</h2><p>The free version includes up to ${FREE_CLAIM_LIMIT} claims per local map and complete rehearsal and export tools. A $12 USD one-time Studio purchase unlocks unlimited claims and full rehearsal history for the lifetime of this product. No subscription is created. Sociobot/Dodo is merchant of record; refund requests are handled there. A refunded or invalid license is automatically locked.</p><h2>Availability and data</h2><p>The app is provided “as is” without a promise of uninterrupted availability. Data is stored locally, so you should export backups. Clearing browser data, changing devices, or browser failures can remove the local map. A valid license token can be restored on another device.</p><h2>Acceptable use</h2><p>Do not interfere with the service, attempt to misuse purchase verification, or use the app unlawfully. The software is also available under its repository’s MIT license.</p><h2>Changes and contact</h2><p>Material changes will be reflected by the date above. Questions can be sent to <a href="mailto:support@sociobot.in">support@sociobot.in</a>.</p></main>`);
 }
 
 function route(): void {
+  syncModeWithLocation();
   closeTimer();
   const path = location.pathname.replace(/\/$/, '') || '/';
+  const isMap = path === '/' || path === '/demo';
   if (path === '/privacy') app.innerHTML = privacyPage();
   else if (path === '/terms') app.innerHTML = termsPage();
   else if (path === '/upgrade') app.innerHTML = upgradePage();
   else app.innerHTML = map.claims.length ? mapPage() : heroPage();
   bindCommon();
-  if (path === '/' && map.claims.length) bindMap();
-  if (path === '/' && !map.claims.length) bindHero();
+  if (isMap && map.claims.length) bindMap();
+  if (isMap && !map.claims.length) bindHero();
   if (path === '/upgrade') bindUpgrade();
+  updateRouteMetadata(path);
   window.scrollTo(0, 0);
 }
 
 function navigate(path: string): void {
-  history.pushState({}, '', path);
+  history.pushState({}, '', routeHref(path));
   route();
+  const heading = document.querySelector<HTMLElement>('main h1');
+  heading?.setAttribute('tabindex', '-1');
+  heading?.focus();
+}
+
+function syncModeWithLocation(): void {
+  const nextDemo = isDemoLocation();
+  if (nextDemo !== demoMode) {
+    demoMode = nextDemo;
+    map = loadMap();
+    licenseToken = safeGet(LICENSE_KEY) ?? '';
+    licenseVerdict = readVerdict();
+    selectedClaimId = '';
+  }
+  ensureSampleMap();
+}
+
+function updateRouteMetadata(path: string): void {
+  const title = path === '/privacy'
+    ? 'Privacy — Knowledge Boundary Map'
+    : path === '/terms'
+      ? 'Terms — Knowledge Boundary Map'
+      : path === '/upgrade'
+        ? 'Studio — Knowledge Boundary Map'
+        : demoMode
+          ? 'Demo — Knowledge Boundary Map'
+          : 'Knowledge Boundary Map — check what you can explain';
+  document.title = title;
+  let canonical = document.querySelector<HTMLLinkElement>('link[rel="canonical"]');
+  if (!canonical) { canonical = document.createElement('link'); canonical.rel = 'canonical'; document.head.append(canonical); }
+  canonical.href = `${location.origin}${path}`;
+  const status = document.querySelector<HTMLElement>('#route-status');
+  if (status) status.textContent = title;
+}
+
+function enterDemo(): void {
+  history.pushState({}, '', '/demo');
+  demoMode = true;
+  map = loadMap();
+  licenseToken = safeGet(LICENSE_KEY) ?? '';
+  licenseVerdict = readVerdict();
+  ensureSampleMap();
+  route();
+  showToast('Demo loaded. Your real map is untouched.');
+}
+
+function resetDemo(): void {
+  map = sampleMap();
+  saveMap();
+  selectedClaimId = '';
+  route();
+  showToast('Demo reset to the sample map.');
+}
+
+function startForReal(): void {
+  try {
+    [STORAGE_KEY, THEME_KEY, LICENSE_KEY, VERDICT_KEY].forEach((key) => localStorage.removeItem(scopedKey(key, true)));
+  } catch { storageAvailable = false; }
+  demoMode = false;
+  map = loadMap();
+  licenseToken = safeGet(LICENSE_KEY) ?? '';
+  licenseVerdict = readVerdict();
+  selectedClaimId = '';
+  history.pushState({}, '', '/');
+  route();
+  showToast('You are now using your private map.');
 }
 
 function bindCommon(): void {
@@ -232,18 +331,14 @@ function bindCommon(): void {
     route();
   });
   bindDialogClosers();
+  document.querySelector('#reset-demo')?.addEventListener('click', resetDemo);
+  document.querySelector('#start-real')?.addEventListener('click', startForReal);
   updateOnlineState();
 }
 
 function bindHero(): void {
   document.querySelector('#start-map')?.addEventListener('click', openClaimDialog);
-  document.querySelector('#load-example')?.addEventListener('click', () => {
-    const first = makeClaim('A correlation does not by itself show causation', 'Explain at least two reasons correlated variables can move together.');
-    const second = makeClaim('A confounder can affect both measured variables', 'Give a concrete example and show the hidden path.');
-    const third = makeClaim('Random assignment reduces systematic confounding', 'Explain what random assignment does and does not guarantee.', [first.id, second.id]);
-    map = { version: 1, topic: 'Causal inference basics', claims: [first, second, third] };
-    saveMap(); route(); showToast('Example map added. Start by rehearsing any claim.');
-  });
+  document.querySelector('#load-example')?.addEventListener('click', enterDemo);
   bindClaimForm();
 }
 
@@ -502,7 +597,7 @@ window.addEventListener('offline', updateOnlineState);
 window.addEventListener('resize', () => requestAnimationFrame(drawConnections));
 document.addEventListener('keydown', (event) => {
   const target = event.target as HTMLElement;
-  if (event.key.toLowerCase() === 'n' && !['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName) && !document.querySelector('dialog[open]') && location.pathname === '/') { event.preventDefault(); openClaimDialog(); }
+  if (event.key.toLowerCase() === 'n' && !['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName) && !document.querySelector('dialog[open]') && ['/', '/demo'].includes(location.pathname)) { event.preventDefault(); openClaimDialog(); }
 });
 
 applyTheme(); route(); void initializeLicense();

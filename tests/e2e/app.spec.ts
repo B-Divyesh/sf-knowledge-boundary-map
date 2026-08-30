@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
+import { readFile } from 'node:fs/promises';
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/');
@@ -12,7 +13,7 @@ test('loads without console or page errors', async ({ page }) => {
   page.on('console', (message) => { if (message.type() === 'error') errors.push(message.text()); });
   page.on('pageerror', (error) => errors.push(error.message));
   await page.goto('/');
-  await page.getByRole('button', { name: 'Try a three-claim example' }).click();
+  await page.getByRole('button', { name: 'Try it with sample data' }).click();
   await page.getByRole('button', { name: /Random assignment/ }).focus();
   await page.keyboard.press('ArrowLeft');
   await expect(page.getByRole('button', { name: /^Not rehearsed A confounder/ })).toBeFocused();
@@ -38,7 +39,7 @@ test('starts the complete free experience when local storage is denied', async (
   });
   await page.reload();
 
-  await expect(page.getByRole('heading', { level: 1, name: 'Find the edge of what you can explain.' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Check what you can explain.' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Pin your first claim' })).toBeVisible();
   await expect(page.getByRole('alert')).toContainText('Local storage is unavailable');
   expect(errors).toEqual([]);
@@ -59,6 +60,51 @@ test('creates, rehearses, and persists a claim', async ({ page }) => {
   expect(results.violations.filter((violation) => ['serious', 'critical'].includes(violation.impact ?? ''))).toEqual([]);
   await page.reload();
   await expect(page.getByRole('button', { name: /Mass is conserved/ })).toBeVisible();
+});
+
+test('@claim:demo-sandbox loads sample data in a separate namespace and discards it when starting for real', async ({ page }) => {
+  await page.getByRole('button', { name: 'Try it with sample data' }).click();
+  await expect(page).toHaveURL(/\/demo$/);
+  await expect(page.getByLabel('Demo controls')).toContainText('sample data, nothing is saved to your real map');
+  await expect(page.getByRole('button', { name: /^Not rehearsed A correlation does not by itself show causation/ })).toBeVisible();
+  const sandbox = await page.evaluate(() => ({ real: localStorage.getItem('kbm:map:v1'), demo: localStorage.getItem('demo:kbm:map:v1') }));
+  expect(sandbox.real).toBeNull();
+  expect(JSON.parse(sandbox.demo!).claims).toHaveLength(3);
+
+  await page.getByRole('button', { name: 'Start for real' }).click();
+  await expect(page).toHaveURL('/');
+  await expect(page.getByRole('heading', { level: 1, name: 'Check what you can explain.' })).toBeVisible();
+  expect(await page.evaluate(() => localStorage.getItem('demo:kbm:map:v1'))).toBeNull();
+});
+
+test('@claim:local-only keeps normal learning activity on the current origin', async ({ page }) => {
+  const origins = new Set<string>();
+  page.on('request', (request) => origins.add(new URL(request.url()).origin));
+
+  await page.getByRole('button', { name: 'Try it with sample data' }).click();
+  await page.getByRole('button', { name: /^Not rehearsed A correlation does not by itself show causation/ }).click();
+  await page.getByLabel('Teach it back from memory *').fill('Correlation can reflect a third variable or a shared trend.');
+  await page.getByLabel('Recognize only').check();
+  await page.getByLabel('Next probe *').fill('Draw a causal graph with a confounder.');
+  await page.getByRole('button', { name: 'Save self-assessment' }).click();
+
+  expect([...origins]).toEqual([]);
+});
+
+test('@claim:csv-export downloads all sample claims as a CSV file', async ({ page }) => {
+  await page.getByRole('button', { name: 'Try it with sample data' }).click();
+  await page.getByRole('button', { name: 'Export' }).click();
+  const downloadPromise = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Download CSV' }).click();
+  const download = await downloadPromise;
+  const path = await download.path();
+  expect(path).not.toBeNull();
+  const csv = await readFile(path!, 'utf8');
+  expect(csv.split('\n')[0]).toBe('"Claim","Status","Prerequisites","Teach-back","Counterexample","Next probe","Last rehearsed"');
+  expect(csv.trim().split('\n')).toHaveLength(4);
+  expect(csv).toContain('A correlation does not by itself show causation');
+  expect(csv).toContain('A confounder can affect both measured variables');
+  expect(csv).toContain('Random assignment reduces systematic confounding');
 });
 
 test('supports legal and upgrade routes in both themes without serious accessibility violations', async ({ page }) => {
@@ -115,7 +161,7 @@ test('light and dark keyboard focus indicators exceed 3 to 1 adjacent contrast',
 test('mobile status ledger is keyboard-scrollable and passes axe', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
-  await page.getByRole('button', { name: 'Try a three-claim example' }).click();
+  await page.getByRole('button', { name: 'Try it with sample data' }).click();
 
   const ledger = page.getByRole('list', { name: 'Self-assessed boundary summary' });
   const dimensions = await ledger.evaluate((element) => ({
@@ -150,7 +196,7 @@ test('mobile brand and footer links provide 44 by 44 pixel touch targets', async
 test('rejects damaged rehearsal imports and explains how to recover', async ({ page }) => {
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
-  await page.getByRole('button', { name: 'Try a three-claim example' }).click();
+  await page.getByRole('button', { name: 'Try it with sample data' }).click();
   await page.getByRole('button', { name: 'Export' }).click();
 
   await page.locator('#import-file').setInputFiles({
@@ -181,7 +227,7 @@ test('rejects damaged rehearsal imports and explains how to recover', async ({ p
 });
 
 test('turns malformed JSON parser errors into actionable import guidance', async ({ page }) => {
-  await page.getByRole('button', { name: 'Try a three-claim example' }).click();
+  await page.getByRole('button', { name: 'Try it with sample data' }).click();
   await page.getByRole('button', { name: 'Export' }).click();
   await page.locator('#import-file').setInputFiles({
     name: 'not-json.json',
@@ -191,35 +237,41 @@ test('turns malformed JSON parser errors into actionable import guidance', async
   await expect(page.getByRole('alert').filter({ hasText: 'This file is not valid JSON.' })).toContainText('Choose a Knowledge Boundary Map JSON export and try again.');
 });
 
-test('updated service worker runs the real application offline', async ({ context, page }) => {
-  await page.goto('/');
-  await page.evaluate(async () => {
-    await navigator.serviceWorker.ready;
-    if (!navigator.serviceWorker.controller) {
-      await new Promise<void>((resolve) => navigator.serviceWorker.addEventListener('controllerchange', () => resolve(), { once: true }));
-    }
-  });
-  await page.reload();
+test('@claim:offline-reload updated service worker runs the real application offline', async ({ browser, baseURL }) => {
+  const context = await browser.newContext({ serviceWorkers: 'allow' });
+  const page = await context.newPage();
+  try {
+    await page.goto(baseURL!);
+    await page.evaluate(async () => {
+      await navigator.serviceWorker.ready;
+      if (!navigator.serviceWorker.controller) {
+        await new Promise<void>((resolve) => navigator.serviceWorker.addEventListener('controllerchange', () => resolve(), { once: true }));
+      }
+    });
+    await page.reload();
 
-  const cacheEntries = await page.evaluate(async () => {
-    const cacheName = (await caches.keys()).find((name) => name.startsWith('kbm-shell-'))!;
-    const cache = await caches.open(cacheName);
-    return (await cache.keys()).map((request) => request.url);
-  });
-  expect(cacheEntries.some((url) => /\/assets\/index-[^/]+\.js$/.test(url))).toBe(true);
-  expect(cacheEntries.some((url) => /\/assets\/index-[^/]+\.css$/.test(url))).toBe(true);
+    const cacheEntries = await page.evaluate(async () => {
+      const cacheName = (await caches.keys()).find((name) => name.startsWith('kbm-shell-'))!;
+      const cache = await caches.open(cacheName);
+      return (await cache.keys()).map((request) => request.url);
+    });
+    expect(cacheEntries.some((url) => /\/assets\/index-[^/]+\.js$/.test(url))).toBe(true);
+    expect(cacheEntries.some((url) => /\/assets\/index-[^/]+\.css$/.test(url))).toBe(true);
 
-  const updateState = await page.evaluate(async () => {
-    const registration = await navigator.serviceWorker.ready;
-    await registration.update();
-    return { installing: Boolean(registration.installing), waiting: Boolean(registration.waiting) };
-  });
-  expect(updateState).toEqual({ installing: false, waiting: false });
+    const updateState = await page.evaluate(async () => {
+      const registration = await navigator.serviceWorker.ready;
+      await registration.update();
+      return { installing: Boolean(registration.installing), waiting: Boolean(registration.waiting) };
+    });
+    expect(updateState).toEqual({ installing: false, waiting: false });
 
-  await context.setOffline(true);
-  await page.reload({ waitUntil: 'domcontentloaded' });
-  await expect(page.getByRole('heading', { level: 1, name: 'Find the edge of what you can explain.' })).toBeVisible();
-  await expect(page.getByText('You’re offline. Your map still works and stays on this device.')).toBeVisible();
+    await context.setOffline(true);
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await expect(page.getByRole('heading', { level: 1, name: 'Check what you can explain.' })).toBeVisible();
+    await expect(page.getByText('You’re offline. Your map still works and stays on this device.')).toBeVisible();
+  } finally {
+    await context.close();
+  }
 });
 
 test('an unseen offline return token never unlocks paid controls', async ({ context, page }) => {

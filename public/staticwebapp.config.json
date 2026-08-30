@@ -11,5 +11,8 @@
     "Referrer-Policy": "strict-origin-when-cross-origin",
     "Permissions-Policy": "camera=(), microphone=(), geolocation=()"
   },
-  "mimeTypes": { ".webmanifest": "application/manifest+json" }
+  "mimeTypes": {
+    ".avif": "image/avif",
+    ".webmanifest": "application/manifest+json"
+  }
 }

@@ -1,5 +1,5 @@
 const CACHE = 'kbm-shell-__KBM_BUILD_ID__';
-const SHELL = ['/privacy', '/terms', '/upgrade', '/manifest.webmanifest', '/favicon.svg', '/assets/boundary-diorama.avif', '/assets/boundary-diorama.webp'];
+const SHELL = ['/demo', '/privacy', '/terms', '/upgrade', '/manifest.webmanifest', '/favicon.svg', '/assets/boundary-diorama.avif', '/assets/boundary-diorama.webp'];
 
 async function cacheShell() {
   const cache = await caches.open(CACHE);

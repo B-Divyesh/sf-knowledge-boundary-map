@@ -11,6 +11,7 @@ Use it after reading, watching, or taking notes on a topic. It does not fact-che
 ## Product behavior
 
 - Browser-only storage with JSON and CSV export; no account or analytics.
+- A one-click sample map is available at `/demo` (or `/?demo=1`) and is stored separately from a real map.
 - Keyboard-navigable claim map and accessible rehearsal dialogs.
 - Offline shell after the first production visit.
 - Free workshop with 12 claims and the complete rehearsal/export flow.
@@ -26,6 +27,7 @@ npm run dev
 npm test
 npm run build       # exact production command; output is dist/
 npm run test:e2e    # starts the production preview automatically
+npm run test:billing # production catalog and hosted-checkout regression
 ```
 
 Set `VITE_BILLING_API_BASE=https://pilot-api.sociobot.in` for staging billing tests. Production defaults to `https://api.sociobot.in`. No product ID or payment-provider code is embedded.
@@ -34,6 +36,6 @@ The production artifact is the `dist/` directory with `index.html` at its root, 
 
 ## Data and safety
 
-Claims and license material stay in local storage. Export before clearing site data or switching browsers. `/privacy` and `/terms` document the exact behavior. The visual system and generated-image provenance are recorded in `.factory/design.md`.
+Claims and license material stay in local storage. Demo data uses a separate `demo:` namespace and is discarded by **Start for real**. Export before clearing site data or switching browsers. `/privacy` and `/terms` document the exact behavior. The visual system and generated-image provenance are recorded in `.factory/design.md`.
 
 Licensed under MIT; see [LICENSE](LICENSE).

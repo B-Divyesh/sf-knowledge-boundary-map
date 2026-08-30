@@ -80,8 +80,9 @@ h3 { font-size: 20px; line-height: 1.25; }
 .hero { display: grid; grid-template-columns: minmax(0, 1.04fr) minmax(340px, .96fr); gap: clamp(32px, 6vw, 80px); align-items: center; min-height: 560px; }
 .hero-copy { padding: 32px 0; }
 .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; margin: 28px 0 18px; }
-.privacy-note { display: flex; align-items: flex-start; gap: 8px; max-width: 540px; font-size: 14px; color: var(--muted); }
-.privacy-note svg { flex: 0 0 auto; margin-top: 3px; }
+.hero-facts { display: grid; gap: 7px; max-width: 540px; padding: 0; margin: 0; list-style: none; color: var(--muted); font-size: 14px; }
+.hero-facts li { display: flex; align-items: flex-start; gap: 8px; }
+.hero-facts svg { flex: 0 0 auto; margin-top: 3px; }
 .hero-art { position: relative; margin: 0; transform: rotate(1deg); }
 .hero-art::before { content: ""; position: absolute; inset: 12px -10px -12px 12px; background: var(--shadow); clip-path: polygon(4% 2%, 98% 0, 100% 94%, 2% 100%); }
 .hero-art picture, .hero-art img { display: block; position: relative; width: 100%; height: auto; clip-path: polygon(2% 3%, 99% 0, 97% 96%, 4% 100%); }
@@ -172,6 +173,10 @@ dialog::backdrop { background: color-mix(in srgb, #08100c, transparent 25%); }
 .toast button { border: 0; background: transparent; color: var(--saffron); font-weight: 800; cursor: pointer; }
 .offline-banner { display: none; margin: 0; padding: 9px 20px; text-align: center; background: var(--saffron); color: #17231e; font-weight: 700; font-size: 14px; }
 .offline-banner.visible { display: block; }
+.demo-banner { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px max(20px, calc((100vw - 1240px)/2)); border-bottom: 1px solid var(--edge); background: var(--lake); color: #fffdf5; font-size: 14px; }
+.demo-banner > span:last-child { display: flex; flex-wrap: wrap; gap: 8px; }
+.demo-action { min-height: 36px; padding: 6px 10px; border: 1px solid currentColor; background: transparent; color: inherit; cursor: pointer; font-weight: 750; }
+.demo-action:hover { background: color-mix(in srgb, #fffdf5, transparent 84%); }
 .license-note { padding: 11px 14px; margin: 0 0 24px; border-left: 5px solid var(--lake); background: color-mix(in srgb, var(--lake), transparent 90%); }
 .storage-warning { width: min(1240px, calc(100% - 40px)); margin: 20px auto 0; }
 .history { margin-top: 24px; }
@@ -207,6 +212,7 @@ dialog::backdrop { background: color-mix(in srgb, #08100c, transparent 25%); }
   .timer-row { align-items: flex-start; flex-direction: column; }
   .dialog-paper { padding: 22px 18px 30px; }
   .site-footer { padding-inline: 16px; }
+  .demo-banner { align-items: flex-start; padding-inline: 16px; }
   .storage-warning { width: calc(100% - 28px); }
 }
 
