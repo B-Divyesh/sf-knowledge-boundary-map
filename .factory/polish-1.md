@@ -31,3 +31,4 @@ Candidate repaired from `bc25c40cebf0247529f8266fe856ba120ddd7012`.
 - Browser accessibility: Axe Playwright checks on `/`, `/privacy`, `/terms`, and mobile demo reported no serious or critical violations.
 - URL verifier: `/opt/fleet/lib/verify-url.sh http://127.0.0.1:4173` passed title, language, main, image alt, button names, and console checks. The local report is `/tmp/kbm-verify.i8wHQh`.
 - Visual review: `/tmp/kbm-polish-shots/demo-mobile.png` and `/tmp/kbm-polish-shots/hero-element.png` were inspected locally.
+- Live URL check at handoff: `https://knowledge-boundary-map.sociobot.in` still returned the pre-repair title after the pushed commit. The exact in-scope Static Web App denied the worker deployment identity, so no live finding is represented as passed without a deployed build.

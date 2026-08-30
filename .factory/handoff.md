@@ -39,6 +39,10 @@ This repair run produced:
 
 Visual evidence is `/tmp/kbm-polish-shots/demo-mobile.png` and `/tmp/kbm-polish-shots/hero-element.png`. Finding-by-finding evidence is in `.factory/polish-1.md`.
 
-## Known gaps
+## Deployment status
 
-None. The optional paid tier is intentionally not offered in this release; no payment or price promise remains.
+The repair commit was pushed to `main` as `ba8fe539c785eacad176c16eb6ae13594240e761`. The work-order configuration has a static deploy build command and no repository-local deployment command. At handoff, the live URL still served the prior title, `Knowledge Boundary Map — check what you can explain`.
+
+The only in-scope manual deploy check (`sf-knowledge-boundary-map`) was denied by Azure with `AuthorizationFailed` for `Microsoft.Web/staticSites/read`; no other resource was accessed. The source tree is committed, pushed, and buildable, but a deployment identity with access to that exact Static Web App must run the configured static deployment before live re-check can complete.
+
+The optional paid tier is intentionally not offered in this release; no payment or price promise remains.
