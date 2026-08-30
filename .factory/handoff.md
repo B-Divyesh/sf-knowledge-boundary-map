@@ -2,7 +2,7 @@
 
 ## Status
 
-**Local repair verified; deployment pending.** This repairs the release blocker recorded in independent verification 7 for base candidate `b4855438321bd9202c3687c6be3c28990666718d` and report commit `c006b9a853ada83dd36fc0da37f84cc378930006`.
+**PASS — deployed and live verified.** This repairs the release blocker recorded in independent verification 7 for base candidate `b4855438321bd9202c3687c6be3c28990666718d` and report commit `c006b9a853ada83dd36fc0da37f84cc378930006`.
 
 ## What changed
 
@@ -12,9 +12,9 @@
 - Added `@finding:demo-banner-dark-contrast-and-touch-targets`, which opens `/demo` in light and dark at 1366×900 and 390×844, measures each action, calculates the rendered contrast ratio, and runs Axe for serious/critical findings.
 - Refreshed `.factory/copy-audit.md` to remove the stale non-rendered sentence and capture the exact landing `<main>` text.
 
-## Exact local evidence
+## Exact repair evidence
 
-Manual browser check after the repair:
+The final deployed `/demo` was checked directly in Chromium after the byte-for-byte identity comparison:
 
 | Theme | Viewport | Rendered banner contrast | Reset / Start height | Serious/critical Axe findings |
 |---|---:|---:|---:|---:|
@@ -45,8 +45,15 @@ The production build emitted 36.06 kB raw / 12.30 kB gzip JavaScript and 18.96 k
 
 ## Deployment and post-deploy verification
 
-The built `dist/` directory is ready for the work order’s Azure Static Web Apps deployment as `sf-knowledge-boundary-map`. After deployment, this handoff will be updated with the live URL, identity/hash checks, `/opt/fleet/lib/verify-url.sh` evidence, and live browser results.
+Deployed `dist/` to the scoped Azure Static Web App `sf-knowledge-boundary-map` with `/opt/fleet/lib/deploy-static.sh knowledge-boundary-map dist`.
+
+- Deployment id: `5bf109b4-67e4-4feb-bd15-574b2e14539f`; Azure reported success and <https://knowledge-boundary-map.sociobot.in> returned HTTPS 200.
+- Live identity: local and live SHA-256 values matched for `index.html`, `assets/index-BWw1tdhd.js`, `assets/index-BFZs3qqv.css`, `sw.js`, and `manifest.webmanifest`.
+- `/opt/fleet/lib/verify-url.sh https://knowledge-boundary-map.sociobot.in/demo …` passed: 763 ms load, no console/page errors, title `Demo — Knowledge Boundary Map`, `lang=en`, one H1, a main landmark, no missing image alt text, and no unlabeled buttons.
+- `PLAYWRIGHT_BASE_URL=https://knowledge-boundary-map.sociobot.in npm run test:e2e` passed all 16 tests, including keyboard, privacy, offline reload, controlled service-worker update, and the new four-case dark/light demo-banner regression.
+- Post-deploy `npm run test:response-policy` passed: the AVIF endpoint returned HTTP 200 with `image/avif`.
+- Mobile Lighthouse on `/demo`: Performance 99, Accessibility 100, Best Practices 100, SEO 100; FCP 1.0 s, LCP 1.1 s, TBT 140 ms, CLS 0.
 
 ## Known gaps and next steps
 
-No known product gaps. The remaining operational step is the scoped production deploy and its post-deploy verification.
+No known product gaps or remaining steps.
