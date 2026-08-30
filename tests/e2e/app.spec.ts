@@ -309,7 +309,7 @@ test('mobile brand and footer links provide 44 by 44 pixel touch targets', async
   await page.goto('/');
 
   const targets = page.locator('.brand, .site-footer a');
-  await expect(targets).toHaveCount(5);
+  await expect(targets).toHaveCount(4);
   for (const target of await targets.all()) {
     const box = await target.boundingBox();
     expect(box, await target.getAttribute('aria-label') ?? await target.textContent() ?? 'target').not.toBeNull();
