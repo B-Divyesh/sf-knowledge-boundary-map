@@ -1,72 +1,70 @@
-# Handoff — independent verification 5
+# Handoff — repair 5
 
 ## Status
 
-**FAIL — do not release candidate `c56f4527370a152af78b1d42e597493ab1059cc7`.**
+**PASS — deployed to <https://knowledge-boundary-map.sociobot.in> on 2026-08-30 UTC.**
 
-Tested URL: <https://knowledge-boundary-map.sociobot.in>
+Repair commits:
 
-Full evidence: [verification-5.md](verification-5.md)
+- `02563bcd1ebd0cb78e5ae80b8068437ebeb0dee9` — product and regression repairs
+- `f14123c690de2ebd998b0f35f7971bd03a5d094b` — corrected the footer target regression assertion
 
-The static deployment is healthy and byte-identical to the candidate. The core map, one-click demo, first-read screen, local storage, exports, mobile layout, axe baseline, PWA offline/update path, security headers, caching, and performance budgets pass. Release is blocked by the claims gate and paid-service availability.
+The static artifact remains Vite + TypeScript with `dist/` as its deployment output. It was deployed directly to Azure Static Web Apps with `swa deploy ./dist --env production`; Azure confirmed the production deployment at `https://wonderful-smoke-0524f170f.7.azurestaticapps.net` and the custom domain serves the same build.
 
-## Blocking defects
+## Repaired findings
 
-1. **High — clean-checkout claim command fails.** After `npm ci` but before any build, `npm run test:e2e -- --grep @claim:demo-sandbox` timed out waiting 60 seconds for `vite preview`; `dist/` does not exist. The declared claim commands pass only after a separate `npm run build`.
-2. **High — production billing is unavailable.** The catalog, checkout, and verification endpoints returned HTTP 503 repeatedly from `2026-08-30T02:46:56Z` through the final `02:56:08Z` claim rerun. `npm run test:billing` initially passed earlier in the run, then failed on its fresh final rerun. The buy link and license restore therefore fail.
-3. **High — claims coverage is incomplete.** JSON restore, keyboard accessibility, free-limit, no-account/no-analytics/runtime-CDN promises, and Studio feature promises are not inventoried in `.factory/claims.json`. The local-only test starts its request log after page load, so it cannot prove initial-load privacy.
-4. **Medium — no real 404.** Unknown paths return HTTP 200 and render the home screen.
-5. **Medium — keyboard focus is not restored.** Closing/saving a rehearsal loses the invoking claim; browser Back leaves focus on `<body>` and scroll is forced to the top.
-6. **Medium — mandatory landing sections are absent.** The page jumps from the first-screen hero to the footer without the required preview, how-it-works, non-goals/privacy, and paid sections.
-7. **Low — metadata/footer gaps.** No 1200×630 social image, 180 px Apple touch icon, or footer build id.
+1. Browser claim commands are now self-contained after `npm ci`: the Playwright web server runs `npm run build && npm run preview`. With `dist/` deliberately moved away, the exact `@claim:demo-sandbox` command built and passed (1/1).
+2. The production billing entry points recovered and the app now distinguishes an unavailable verification service from an inactive license. Restore keeps the free map available and tells the user to retry rather than claiming their token is invalid.
+3. `.factory/claims.json` now inventories demo isolation, whole-load local-only privacy, offline reload, CSV export, JSON restore, keyboard/dialog behavior, free allowance, self-assessment wording, Studio features, and Studio price/checkout. Each has one tagged Playwright command. The local-only observer is attached before first navigation.
+4. Static Web Apps now uses explicit rewrites for real application routes and a `responseOverrides.404` rewrite to the designed `404.html`. The production unknown-route response is HTTP 404, not the home page.
+5. Rehearsal close/save restores focus to the relevant claim. Back/Forward stores scroll positions and focuses the destination heading without forcing the page to the top.
+6. The landing page now has the required working preview, three-step explanation, privacy/non-goals, and exact paid-tier sections. The footer includes Param Factory and build identity.
+7. Added a 1200×630 social card, declared 180px Apple touch icon, Twitter image metadata, and provenance for derivatives in the visual thesis.
 
-During the billing outage, restore also reports an unavailable verification service as an inactive token and Chromium logs CORS/resource errors. Pilot verification did enforce an observed allowance of 30 successful requests: request 31 returned 429 with `Retry-After: 4`, and access recovered after five seconds. Production allowance could not be verified because its first request returned 503.
+## Verification
 
-## Passing evidence
-
-| Check | Result |
-|---|---|
-| First-read gate | Pass: job, audience, and “Try it with sample data” are plain and above the fold on desktop and 390 px mobile |
-| `npm ci` / audit | Pass; 59 packages; 0 vulnerabilities |
-| `npm test` | Pass; 8/8 |
-| `npm run build` | Pass; TypeScript + Vite; `dist/` produced |
-| Individual browser claims after build | Pass; demo, local-only, offline, CSV each 1/1 |
-| Full local browser suite after build | Pass; 18/18 |
-| Full live browser suite | Pass; 18/18 |
-| Response policy | Pass; AVIF is HTTP 200 `image/avif` |
-| Independent learning workflow | Pass; five claims, prerequisite, timer, validation/recovery, reassessment, JSON/CSV, delete/Undo |
-| Accessibility scans | 0 serious/critical axe findings on desktop, dark, and 390 px mobile; URL verifier passes local/live |
-| Privacy normal flow | 0 cross-origin requests and 0 console/page errors with observer attached before navigation |
-| PWA | Current worker update and offline `/privacy` reload pass; old-worker update regression passes |
-| Lighthouse local/live `/demo` | Performance 100/99; Accessibility 100/100; LCP 1.13/1.00 s; CLS 0/0 |
-| Bundles | JS 36,550 B raw / 12,620 gzip; CSS 15,522 B raw / 4,448 gzip; AVIF 74,110 B; no fonts |
-| Static deployment identity | Local and live HTML, JS, CSS, worker, manifest, favicon, AVIF, and WebP hashes match |
-
-No separate lint script exists. This is a static PWA, not a library, CLI, backend, or sign-in product, so consumer package, CLI, server persistence/concurrency/health, and identity-provider checks do not apply. The external Sociobot billing endpoints were tested as described above.
-
-## Reproduce
-
-Clean claim-gate failure:
+Run locally with Node 20+:
 
 ```sh
 npm ci
-npm run test:e2e -- --grep @claim:demo-sandbox
-```
-
-Passing repository gates after the missing build step:
-
-```sh
-npm audit --audit-level=low
+npm run lint
 npm test
 npm run build
 npm run test:e2e
-PLAYWRIGHT_BASE_URL=https://knowledge-boundary-map.sociobot.in npm run test:e2e
 npm run test:response-policy
 npm run test:billing
 ```
 
-At verification time the final billing command failed with HTTP 503. Do not treat a later single 303 as sufficient; establish sustained availability and complete the production purchase/restore/revocation path.
+Completed evidence:
 
-## Repository changes in this verification
+| Check | Result |
+|---|---|
+| `npm ci` / `npm audit --audit-level=low` | Pass; 0 vulnerabilities |
+| `npm run lint` | Pass; strict TypeScript |
+| `npm test` | Pass; 9/9 Vitest tests |
+| `npm run build` | Pass; emits `dist/` |
+| Clean `@claim:demo-sandbox` with no `dist/` | Pass; 1/1, proving preview builds its artifact |
+| All ten exact commands in `.factory/claims.json` | Pass; each tagged browser claim ran from the production-preview command |
+| Full local browser suite | Pass; 26/26 Playwright tests |
+| Full live browser suite | Pass; 26/26 against `https://knowledge-boundary-map.sociobot.in` |
+| Keyboard, dialog focus, Back/Forward, desktop and 390px | Pass; covered in browser regressions |
+| Axe Playwright integration | Pass; 0 serious/critical findings for populated desktop, dark, 390px mobile, privacy, terms, and upgrade screens |
+| `verify-url.sh` local `/demo` | Pass; title, `lang=en`, one h1, main, image alts, button names, and 0 console errors; 524ms load |
+| `verify-url.sh` live `/demo` | Pass; the same semantic checks and 0 console errors; 620ms load |
+| Offline/update path | Pass; dedicated context reloads offline and old-worker update regression passes |
+| Privacy | Pass; observer attached before navigation saw only the app origin through a demo rehearsal |
+| Production 404 | Pass; `/this-route-should-not-exist-qa` returns HTTP 404 with the designed page and restrictive CSP |
+| `npm run test:response-policy` | Pass; live AVIF returns HTTP 200 `image/avif` |
+| Production billing | Pass; catalog reports this slug at 1200 USD cents and checkout returns HTTP 303 |
+| Production verification allowance | Pass; 30 invalid-token requests returned 200, request 31 returned 429 with `Retry-After: 3`, and a request after five seconds returned 200 |
+| Lighthouse 13.4 live `/demo` | Performance 100; Accessibility 100; Best Practices 100; SEO 100; LCP 1.05s; CLS 0 |
 
-No product code was modified. Only this handoff and `.factory/verification-5.md` were added/updated.
+Final bundle measurements: JavaScript 40,224 bytes raw / 13,630 gzip; CSS 18,554 bytes raw / 5,010 gzip; LCP AVIF 74,110 bytes. No font files or runtime CDN scripts ship.
+
+## Privacy and billing notes
+
+Map data stays local. Demo storage remains under the separate `demo:` namespace. License verification sends only the token to `api.sociobot.in`; the code tests return-token, cached-valid, unavailable, and revoked behavior without a real customer purchase. Production checkout and catalog availability were verified live. A real production purchase was not created because no production test purchaser or payment method is part of this work order.
+
+## Known gaps / next steps
+
+No repository-controlled release gaps remain. The only external dependency is the Sociobot billing service; it was healthy and rate-limit recovery was verified during this handoff. Continue to monitor it operationally outside this static product repository.
