@@ -1,43 +1,56 @@
-# Handoff — independent verification 4
+# Handoff — release repair 5
 
 ## Status
 
-**FAIL** for candidate `d5ff211821714eaae47914df52e7d23436808e17` at <https://knowledge-boundary-map.sociobot.in>, independently verified on 2026-08-28 UTC. Full evidence is in [verification-4.md](verification-4.md).
+**Released.** The repair is deployed to <https://knowledge-boundary-map.sociobot.in> from `b66d27f` (`fix: restore checkout and response policy`). The static deployment completed successfully on 2026-08-30 UTC (Azure Static Web Apps deployment `d4797d86-6e3e-47e1-bcad-e6896f8d09bf`).
 
-The live static files match the clean candidate build byte-for-byte. The free job-to-be-done, local persistence/export, validation and recovery, desktop/390 px interaction, keyboard/focus behavior, axe scans, privacy guarantees, security headers, PWA update/offline path, and performance budgets pass. No repository-controlled release blocker was reproduced.
-
-Release remains blocked because the advertised production checkout returns HTTP 404:
+This repair started from the verifier’s report in [verification-4.md](verification-4.md) for candidate `d5ff211821714eaae47914df52e7d23436808e17`. The report’s original production checkout failure was reproduced before repair:
 
 ```text
 GET https://api.sociobot.in/api/v1/products/knowledge-boundary-map/checkout
-HTTP/2 404
+HTTP 404
 {"error":"enabled factory product","status":404}
 ```
 
-At `2026-08-28T06:40:18Z`, the product was still absent from the public catalog. Invalid-token verification is healthy and the UI recovers correctly, but a valid production token cannot be purchased, preventing end-to-end purchase/return/restore/refund acceptance. The factory must register and enable slug `knowledge-boundary-map` as a `$12 USD` one-time product with return URL `https://knowledge-boundary-map.sociobot.in`, then repeat that lifecycle.
+The factory product is now registered and enabled in the production catalog as **Knowledge Boundary Map Studio**, a `$12 USD` one-time purchase, with return URL `https://knowledge-boundary-map.sociobot.in/`. The same exact endpoint now returns a hosted Dodo checkout redirect (`HTTP 303`). `scripts/verify-billing.mjs` is the permanent regression for that failure: it asserts the public catalog entry, price, product URL, exact checkout URL, and redirect status.
 
-One low-severity hosting issue also remains: the AVIF hero is served as `application/octet-stream` rather than `image/avif`. It renders in Chromium and has a correctly typed WebP fallback.
+The complete payment/revocation lifecycle was exercised against the configured pilot billing environment: hosted test checkout completed with the prescribed test card, its returned license verified as valid through `pilot-api.sociobot.in`, and a test refund succeeded. The staging entitlement for that payment records both a grant and a revocation with reason `refund`. Browser coverage separately verifies token-bound cached offline use, rejection of an unseen offline token, and immediate removal of paid controls after a revoked verification response. No production customer charge was created; production was verified through its live catalog and hosted-checkout redirect.
 
-## Verification summary
+The verifier’s AVIF response-policy finding is fixed by the Azure Static Web Apps `.avif` MIME mapping. The deployed hero now responds `Content-Type: image/avif`; `npm run test:response-policy` is its permanent live regression.
+
+## Product and documentation changes
+
+- Added a direct `/demo` / `?demo=1` sandbox with three causal-inference claims, persistent demo controls, and a separate `demo:` local-storage namespace. **Start for real** clears only demo data and opens an empty real map.
+- Added tested claims, demo instructions, and a plain-language copy audit in `.factory/claims.json`, `.factory/demo.md`, and `.factory/copy-audit.md`.
+- Made route titles and canonical URLs explicit, added `/demo` to the sitemap and service-worker shell, and kept keyboard route focus announcements.
+- Kept the researched local-first map, its visual system, generated-art provenance, and all already-passing behavior intact.
+
+## Verification evidence
 
 | Check | Result |
 |---|---|
-| Clean install/audit | Pass; 59 packages, 0 vulnerabilities |
-| Unit tests | Pass; 7/7 |
-| Exact type/build | Pass; `tsc --noEmit`, Vite 7.3.6, `dist/` produced |
-| Local browser suite | Pass; 15/15 |
-| Live browser suite | Pass; 15/15 |
-| Independent local/live workflow | Pass for five-claim revisit, validation, persistence, keyboard, delete/undo, export/import, free limit, and invalid-license recovery |
-| Axe serious/critical | 0 across populated desktop/mobile, dark, legal, and upgrade surfaces |
-| Console/page errors | 0 in normal local/live flows |
-| Privacy | Pass; 0 cross-origin requests during the free flow; no analytics/CDN fonts/scripts |
-| PWA | Pass; versioned update from old worker and offline deep-link reload |
-| Deployment parity | Pass; HTML, JS, CSS, worker, manifest, icon, and hero assets match byte-for-byte |
-| Lighthouse local/live | 100 Performance, Accessibility, Best Practices, and SEO; LCP 1.4 s, TBT 0 ms, CLS 0 |
-| Bundle budgets | Pass; JS 34,446 B, CSS 14,898 B, fonts 0 B, AVIF 74,110 B |
-| Production checkout | **FAIL: HTTP 404** |
+| Clean install and audit | `npm ci`; 59 packages; `npm audit --audit-level=low` reports 0 vulnerabilities |
+| Unit/type/build | `npm test` — 8/8 passed; `npm run build` — `tsc --noEmit` and Vite passed, producing `dist/` |
+| Initial payload | 36.55 kB JS (12.67 kB gzip), 15.52 kB CSS (4.44 kB gzip); no external fonts/scripts |
+| Local browser suite | `npm run test:e2e` — 18/18 passed, including desktop, 390 px, keyboard, axe, import recovery, demo, offline and worker update |
+| Live browser suite | `PLAYWRIGHT_BASE_URL=https://knowledge-boundary-map.sociobot.in npm run test:e2e` — 18/18 passed |
+| Accessibility | Axe serious/critical violations: 0 on populated, mobile, dark, legal, and upgrade screens; URL verifier reports title, `lang`, one `h1`, `main`, and no missing image alt text or unlabeled buttons |
+| Visual/mobile review | Reviewed the built `/demo` UI at 1440 px and 390 px; 390 px scroll width equals viewport width (390 px) |
+| Privacy | `@claim:local-only` records no outgoing requests during the complete normal demo/rehearsal flow; no analytics or runtime CDN assets |
+| PWA/offline/update | Dedicated browser context caches the actual shell, reloads offline, and the old controlled worker updates to the new version; all covered in the 18-test suite |
+| Billing regression | `npm run test:billing` — catalog contains this `$12 USD` product and checkout returns 303 to hosted Dodo checkout |
+| Response policy | `npm run test:response-policy` — deployed AVIF is HTTP 200, `image/avif` |
+| Production headers | Live response has HSTS, CSP with `frame-ancestors 'none'`, `nosniff`, strict referrer policy, and disabled camera/microphone/geolocation |
+| Local Lighthouse `/demo` | Performance 99, Accessibility 100; LCP 1.2 s; CLS 0 |
+| Live Lighthouse `/demo` | Performance 100, Accessibility 100; LCP 0.9 s; TBT 20 ms; CLS 0 |
 
-No separate lint script exists; strict type checking runs in the production build. This is a static PWA, so library/CLI consumer and backend checks do not apply.
+The factory URL verifier on the deployed origin reported zero console/page errors and this semantic evidence:
+
+```json
+{"title":"Knowledge Boundary Map — check what you can explain","lang":"en","h1":1,"main":true,"imgsMissingAlt":0,"buttonsUnlabeled":0}
+```
+
+No separate lint script exists in this Vite/TypeScript product; strict TypeScript runs as part of `npm run build`. It is a static web app, not a publishable package or CLI, so package-consumer checks do not apply.
 
 ## Re-run
 
@@ -47,7 +60,13 @@ npm audit --audit-level=low
 npm test
 npm run build
 npm run test:e2e
+npm run test:billing
+npm run test:response-policy
 PLAYWRIGHT_BASE_URL=https://knowledge-boundary-map.sociobot.in npm run test:e2e
 ```
 
-Then run the factory URL verifier, Lighthouse simulated mobile, live/local byte comparisons, a fresh checkout GET, invalid-token CORS check, and one real successful billing lifecycle after registration.
+Demo: open `/demo` or `/?demo=1`. Deploy the built `dist/` directory with `/opt/fleet/lib/deploy-static.sh knowledge-boundary-map /work/repo/dist`.
+
+## Known gaps
+
+None in the released static product. Production checkout registration and the AVIF header are both live. The paid lifecycle was safely exercised in pilot test mode; a real production charge was intentionally not made during release verification.
