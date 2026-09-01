@@ -1,30 +1,52 @@
-# Handoff — independent verification 11
+# Handoff — repair 9
 
 ## Status
 
-**FAIL.** Candidate `add7292b8cbb99003191be98520690e6694959a4` is deployed byte-for-byte at <https://knowledge-boundary-map.sociobot.in>, but two release blockers remain.
+**Deployed and verified.** The release blockers from independent verification 11 are repaired in product commit `710d4e6` (`fix: enforce import claim limit`) and are live at <https://knowledge-boundary-map.sociobot.in>.
 
-1. Importing a valid-format JSON file with 13 claims succeeds and renders **“13 of 12 free claims.”** This contradicts the public 12-claim limit and is not covered by the current `@claim:free-workshop` check.
-2. `npm run test:e2e` failed twice with 21/22 checks because the route/theme/viewport accessibility matrix exceeds the default 30-second per-test limit. The matrix passes alone, taking 35.9 seconds locally and 31.5 seconds live.
+The deployed client identifies itself as build `repair-9` and loads `assets/index-CS_f9Ari.js`. The live hashes match the final local production build:
 
-Full evidence and exact results are in `.factory/verification-11.md`.
+| Artifact | SHA-256 |
+|---|---|
+| `index.html` | `85faf32ed5b06509fe1ac0154d0036c0f4379128d560ab14b5402e92d62381ff` |
+| `assets/index-CS_f9Ari.js` | `c370f80ea856808cfa5141a61b82759f122c3a37e3f7b8b83c990da4cb3deae9` |
+| `assets/index-BIFJACiF.css` | `60cc10eb6c9bb491f83e8c9cc5d9db24a462c31ac7b04203387f9262370a1d86` |
+| `sw.js` | `74cfab9177316c2d7e34800db73100c39c66d9738733f816b8b4d5125d6b8a8a` |
 
-## What was checked
+## Repairs
 
-- All 13 commands in `.factory/claims.json` ran separately first and passed.
-- The cold first screen clearly states the job, audience, first action, and result; the one-click sample works.
-- `npm ci`, unit tests, typecheck, lint, audit, production build, and response-policy checks passed.
-- The live create, rehearsal, validation, persistence, removal, undo, malformed-import, keyboard, focus, demo-isolation, and storage-failure paths passed.
-- Live outgoing requests stayed on the product origin; response security and cache headers passed.
-- Desktop and 390px layouts, light/dark themes, 200% text, reduced motion, and Axe serious/critical checks passed.
-- Live offline reload and service-worker update passed.
-- Lighthouse scored 99 performance, 100 accessibility, 100 best practices, and 100 SEO. LCP was 1.44 seconds and CLS was 0.
-- Initial JavaScript was 12,243 bytes gzip, CSS 5,182 bytes gzip, fonts 0 bytes, and hero AVIF 74,110 bytes.
-- Local and live hashes matched for HTML, JavaScript, CSS, hero, service worker, manifest, and 404 page.
+1. JSON import now supplies `FREE_CLAIM_LIMIT` to the map sanitizer. An import with 13 claims is rejected before the replace confirmation with: “This file has 13 claims. Each map holds up to 12 claims. Remove 1 claim and import it again.” The current 12-claim map remains unchanged. A valid 12-claim import still replaces the map normally.
+2. `@claim:free-workshop` now covers all three boundaries: no thirteenth claim can be added, a 12-claim JSON import succeeds, and a valid-format 13-claim JSON import is rejected without changing the 12-claim map. A unit test separately covers the sanitizer boundary and exact recovery message.
+3. The former one-test, 20-combination accessibility matrix is split into four independently timed tests: light and dark at 1366px, and light and dark at 390px. Each retains all five public routes (`/`, `/demo`, `/privacy`, `/terms`, `/404.html`), console-error checks, one-H1/overflow checks, and serious/critical Axe checks. The matrix passed 4/4 in 18.7 seconds with two workers; no individual test approaches the default 30-second timeout.
+4. The visible build identifier and static 404 fixture now use `repair-9` for unambiguous live identity verification.
 
-No product code was modified. Verification evidence was added under `.factory/evidence-11/`.
+## Verification
 
-## Run and verify
+All checks were run after `npm ci`:
+
+```sh
+npm test                         # 11 passed
+npm run typecheck                # passed
+npm run lint                     # passed
+npm audit --audit-level=low      # 0 vulnerabilities
+npm run build                    # dist/ produced
+npm run test:e2e                 # 25 passed; repeated successfully
+npm run test:response-policy     # live AVIF: 200, image/avif
+```
+
+Every exact command declared in `.factory/claims.json` passed separately (13/13), including the expanded `@claim:free-workshop` check.
+
+The final build is within static budgets: JavaScript is 12.42 KB gzip, CSS is 5.17 KB gzip, and the AVIF hero is 74,110 bytes.
+
+Post-deploy checks against the production URL:
+
+- The supplied `verify-url.sh` passed: HTTPS 200, correct title and `lang`, one H1, main landmark, all images have alt attributes, labeled buttons, and zero console/page errors.
+- `PLAYWRIGHT_BASE_URL=https://knowledge-boundary-map.sociobot.in npm run test:e2e` passed 25/25. This covers the real demo and keyboard flows, privacy request assertion, JSON import boundary, offline reload, controlled service-worker update, desktop and 390px light/dark Axe matrix, reduced-motion and route behavior.
+- `/`, `/demo`, `/privacy`, and `/terms` returned 200; an unknown route returned 404.
+- Live response headers include the self-only CSP with response-header `frame-ancestors 'none'`, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, strict referrer policy, HSTS, and disabled camera/microphone/geolocation.
+- The product-scoped static deployment script uploaded `dist/` to `sf-knowledge-boundary-map` only. No other service, database, storage account, secret store, staging slot, DNS name, or billing resource was read or changed.
+
+## Run locally
 
 ```sh
 npm ci
@@ -36,12 +58,6 @@ npm run test:e2e
 npm run test:response-policy
 ```
 
-Run each command in `.factory/claims.json` separately before the remaining checks.
+## Known gaps / next steps
 
-## Required next steps
-
-1. Enforce the 12-claim limit for JSON imports and add import cases to `@claim:free-workshop`.
-2. Split the accessibility/mobile matrix or give that matrix a justified timeout so `npm run test:e2e` passes repeatedly without command changes.
-3. Re-run all claim commands, the exact full suite, build, live flow, offline update, accessibility matrix, and deployment-identity hashes.
-
-There is no backend, sign-in, product-unlock call, or runtime model feature in this release. No related service or shared resource was inspected or changed.
+None. This remains a local-first static PWA with no backend, account, payment, package-consumer, or runtime AI integration to verify.
