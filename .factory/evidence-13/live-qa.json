@@ -1,0 +1,71 @@
+{
+  "desktop": {
+    "firstRead": "PASS",
+    "demoIsolation": "PASS",
+    "normalFlow": "PASS",
+    "boundaryLengths": {
+      "claim": 160,
+      "context": 600
+    },
+    "invalidClaimRecovery": "PASS",
+    "invalidRehearsalRecovery": "PASS",
+    "invalidImportRecovery": "PASS",
+    "persistence": "PASS",
+    "removeCancelUndo": "PASS",
+    "keyboardMapDialog": "PASS",
+    "focusStyle": {
+      "focusVisible": true,
+      "outlineStyle": "solid",
+      "outlineWidth": "3px",
+      "outlineColor": "rgb(118, 80, 0)"
+    },
+    "axeSeriousCritical": 0,
+    "consolePageErrors": 0,
+    "requestOrigins": [
+      "https://knowledge-boundary-map.sociobot.in"
+    ],
+    "requestCount": 9,
+    "responseHeaders": {
+      "cache-control": "public, must-revalidate, max-age=30",
+      "content-encoding": "br",
+      "content-security-policy": "default-src 'self'; base-uri 'self'; connect-src 'self'; font-src 'self'; form-action 'self'; frame-ancestors 'none'; img-src 'self' data:; manifest-src 'self'; object-src 'none'; script-src 'self'; style-src 'self'; worker-src 'self'; upgrade-insecure-requests",
+      "content-type": "text/html",
+      "date": "Tue, 01 Sep 2026 22:58:03 GMT",
+      "etag": "\"90870872\"",
+      "last-modified": "Tue, 01 Sep 2026 22:40:47 GMT",
+      "permissions-policy": "camera=(), microphone=(), geolocation=()",
+      "referrer-policy": "strict-origin-when-cross-origin",
+      "strict-transport-security": "max-age=10886400; includeSubDomains; preload",
+      "vary": "Accept-Encoding",
+      "x-content-type-options": "nosniff",
+      "x-dns-prefetch-control": "off",
+      "x-frame-options": "DENY",
+      "x-xss-protection": "1; mode=block"
+    }
+  },
+  "mobile390": {
+    "overflowPx": 0,
+    "visibleTargets": 18,
+    "targetsBelow44px": [],
+    "axeSeriousCritical": 0,
+    "consolePageErrors": 0
+  },
+  "reducedMotion": {
+    "materialDurationsOrSmoothScroll": 0
+  },
+  "storageFailure": {
+    "warning": "PASS",
+    "inMemoryUse": "PASS",
+    "exportRecovery": "PASS",
+    "consolePageErrors": 0
+  },
+  "pwa": {
+    "controller": true,
+    "activeState": "activated",
+    "waiting": false,
+    "caches": [
+      "kbm-shell-571480d52b1b"
+    ],
+    "offlineReload": "PASS"
+  }
+}
