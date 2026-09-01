@@ -3,7 +3,7 @@ import { asCsv, EMPTY_MAP, FREE_CLAIM_LIMIT, makeClaim, recordRehearsal, sanitiz
 
 const STORAGE_KEY = 'kbm:map:v1';
 const THEME_KEY = 'kbm:theme';
-const BUILD_ID = import.meta.env.VITE_BUILD_ID || 'polish-3';
+const BUILD_ID = import.meta.env.VITE_BUILD_ID || 'polish-4';
 type RouteOptions = { scroll?: 'top' | { x: number; y: number }; focusHeading?: boolean };
 
 let storageAvailable = true;
@@ -207,7 +207,7 @@ function privacyPage(): string {
 }
 
 function termsPage(): string {
-  return layout(`<main class="site-main legal" id="main"><p class="eyebrow">Use agreement</p><h1>Terms</h1><p class="lede">A private thinking tool, not an authority on what you know.</p><p><strong>Last updated:</strong> September 1, 2026</p><h2>The service</h2><p>Knowledge Boundary Map lets you create a map in your browser and record your own self-assessments. It does not fact-check claims, measure intelligence, certify expertise, or replace a teacher or professional advice. Check important information against reliable sources.</p><h2>Free use</h2><p>Each map holds up to ${FREE_CLAIM_LIMIT} claims. Every claim can use the 90-second teach-back. You can export JSON or CSV. No purchase is offered in this release.</p><h2>Availability and data</h2><p>The app is provided “as is” without a promise of uninterrupted availability. Your map is saved only in this browser, so export backups. Clearing browser data, changing devices, or browser failures can remove the map.</p><h2>Acceptable use</h2><p>Do not interfere with the service or use the app unlawfully. The software is also available under its repository’s MIT license.</p><h2>Changes and contact</h2><p>Material changes will be reflected by the date above. Questions can be sent to <a href="mailto:support@sociobot.in">support@sociobot.in</a>.</p></main>`);
+  return layout(`<main class="site-main legal" id="main"><p class="eyebrow">Use agreement</p><h1>Terms</h1><p class="lede">A private thinking tool, not an authority on what you know.</p><p><strong>Last updated:</strong> September 1, 2026</p><h2>The service</h2><p>Knowledge Boundary Map lets you create a map in your browser and record your own self-assessments. It does not fact-check claims, measure intelligence, certify expertise, or replace a teacher or professional advice. Check important information against reliable sources.</p><h2>Free use</h2><p>Each map holds up to ${FREE_CLAIM_LIMIT} claims. Every claim can use the 90-second teach-back. You can export JSON or CSV.</p><h2>Availability and data</h2><p>The app is provided “as is” without a promise of uninterrupted availability. Your map is saved only in this browser, so export backups. Clearing browser data, changing devices, or browser failures can remove the map.</p><h2>Acceptable use</h2><p>Do not interfere with the service or use the app unlawfully. The software is also available under its repository’s MIT license.</p><h2>Changes and contact</h2><p>Material changes will be reflected by the date above. Questions can be sent to <a href="mailto:support@sociobot.in">support@sociobot.in</a>.</p></main>`);
 }
 
 function notFoundPage(): string {

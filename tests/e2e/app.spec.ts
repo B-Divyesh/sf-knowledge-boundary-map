@@ -64,6 +64,13 @@ test('real routes update titles, metadata, history, and heading focus', async ({
   await expect(page.getByRole('link', { name: 'Go to your map' })).toHaveAttribute('href', '/');
 });
 
+test('@finding:F-4-1 terms contains no unlisted no-purchase promise', async ({ page }) => {
+  await page.goto('/terms');
+  await expect(page.getByRole('heading', { level: 2, name: 'Free use' })).toBeVisible();
+  await expect(page.getByText('No purchase is offered in this release.')).toHaveCount(0);
+  await expect(page.getByText('Each map holds up to 12 claims.')).toBeVisible();
+});
+
 test('@claim:demo-sandbox opens a completed mixed-status sample without touching the real map', async ({ page }) => {
   await page.evaluate(() => localStorage.setItem('kbm:map:v1', JSON.stringify({ version: 1, topic: 'REAL MARKER', claims: [] })));
   await openDemo(page);

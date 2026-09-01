@@ -1,6 +1,6 @@
 # Landing copy audit
 
-Checked 2026-09-01 after polish round 3. This is the exact visible text from the landing page’s `<main>`, including buttons, headings, sample-map labels, and the hero caption. Every sentence is 22 words or fewer. No banned marketing wording appears.
+Checked 2026-09-01 after polish round 4. This is the exact visible text from the landing page’s `<main>`, including buttons, headings, sample-map labels, and the hero caption. Every sentence is 22 words or fewer. No banned marketing wording appears.
 
 | Copy | Words | Result |
 |---|---:|---|
@@ -65,7 +65,7 @@ Checked 2026-09-01 after polish round 3. This is the exact visible text from the
 | Private map practice for self-learners | 5 | Pass |
 | Terms | 1 | Pass |
 | Source on GitHub | 3 | Pass |
-| Built by Param Factory · build polish-3 | 7 | Pass |
+| Built by Param Factory · build polish-4 | 7 | Pass |
 
 ## README prose audit
 
