@@ -1,0 +1,9 @@
+Deployment: 7222e039-65ca-49ab-9425-eed0d9ac24e5
+Checked: 2026-09-01 UTC
+Result: each local dist artifact matched the live response byte-for-byte
+
+/index.html 7e27f1330c76f539beea2621c37569dcbb74b01925c3f054d387a9be687ced8f
+/assets/index-TFzw1x8X.js c21d9f84437f4fdab358d10b6f513a330c114ab94972e123e85f74c7d1666a51
+/assets/index-B4EWOLRp.css b8f41a29a876620867d5e1b7f90c6f19a82204f4c62b01cbdd6346cc6034740d
+/404.html b134e64dc891d0b7914f4fc51e330da53c29c14f8fa2e149009cdf7cd4fa6a1a
+/sw.js f2d5183144d930c354940e069f435195fae8527cce9e40389d409dc948ca50bb

@@ -1,0 +1,22 @@
+{
+  "commit": "ec985d133db89b2e1d44b43fd15ae636aeb4b0c2",
+  "cleanClone": "/tmp/kbm-polish4-clean.IWXSdQ",
+  "install": "npm ci: 59 packages, 0 vulnerabilities",
+  "execution": "Each command from .factory/claims.json ran separately",
+  "results": [
+    { "id": "demo-sandbox", "result": "PASS", "tests": 1 },
+    { "id": "local-only", "result": "PASS", "tests": 1 },
+    { "id": "offline-reload", "result": "PASS", "tests": 1 },
+    { "id": "csv-export", "result": "PASS", "tests": 1 },
+    { "id": "json-restore", "result": "PASS", "tests": 1 },
+    { "id": "keyboard-dialog", "result": "PASS", "tests": 1 },
+    { "id": "free-workshop", "result": "PASS", "tests": 1 },
+    { "id": "self-assessment-label", "result": "PASS", "tests": 1 },
+    { "id": "theme-storage", "result": "PASS", "tests": 1 },
+    { "id": "prerequisites", "result": "PASS", "tests": 1 },
+    { "id": "teach-back-timer", "result": "PASS", "tests": 1 },
+    { "id": "counterexample-capture", "result": "PASS", "tests": 1 },
+    { "id": "next-question", "result": "PASS", "tests": 1 }
+  ],
+  "summary": { "passed": 13, "failed": 0 }
+}

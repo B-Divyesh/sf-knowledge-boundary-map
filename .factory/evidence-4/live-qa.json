@@ -1,0 +1,60 @@
+{
+  "origin": "https://knowledge-boundary-map.sociobot.in",
+  "checkedAt": "2026-09-01T23:48:04.643Z",
+  "desktop": {
+    "firstScreen": "PASS",
+    "directDemoQuery": "PASS",
+    "demoResetAndIsolation": "PASS",
+    "demoExit": "PASS",
+    "termsF41": "PASS",
+    "routes": [
+      {
+        "path": "/",
+        "status": 200,
+        "title": "Knowledge Boundary Map — test what you can explain",
+        "heading": "Test what you can explain.",
+        "result": "PASS"
+      },
+      {
+        "path": "/demo",
+        "status": 200,
+        "title": "Demo — Knowledge Boundary Map",
+        "heading": "Your explanation map",
+        "result": "PASS"
+      },
+      {
+        "path": "/privacy",
+        "status": 200,
+        "title": "Privacy — Knowledge Boundary Map",
+        "heading": "Privacy",
+        "result": "PASS"
+      },
+      {
+        "path": "/terms",
+        "status": 200,
+        "title": "Terms — Knowledge Boundary Map",
+        "heading": "Terms",
+        "result": "PASS"
+      },
+      {
+        "path": "/definitely-missing-polish-4",
+        "status": 404,
+        "title": "Page not found — Knowledge Boundary Map",
+        "heading": "Page not found.",
+        "result": "PASS"
+      }
+    ],
+    "requestOrigins": [
+      "https://knowledge-boundary-map.sociobot.in"
+    ],
+    "checkoutOrBillingRequests": 0,
+    "consolePageErrors": 0,
+    "expectedMissingRouteResourceErrors": 1
+  },
+  "mobile": {
+    "overflowPx": 0,
+    "axeSeriousCritical": 0,
+    "targetsBelow44px": 0,
+    "designed404": "PASS"
+  }
+}
