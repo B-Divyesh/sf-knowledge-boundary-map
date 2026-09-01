@@ -1,76 +1,47 @@
-# Handoff — polish round 2
+# Handoff — independent verification 11
 
 ## Status
 
-**PASS.** Every finding in `.factory/review-1.md` and `.factory/review-2.md` is closed. The repaired static site is deployed at <https://knowledge-boundary-map.sociobot.in>. No known acceptance gap remains.
+**FAIL.** Candidate `add7292b8cbb99003191be98520690e6694959a4` is deployed byte-for-byte at <https://knowledge-boundary-map.sociobot.in>, but two release blockers remain.
 
-The repair keeps the paper-cut explanation-map identity. It fixes demo exit and theme isolation, makes all remaining labels literal, strengthens partial claim tests, registers the theme privacy promise, completes route and metadata coverage, and removes the last storage jargon.
+1. Importing a valid-format JSON file with 13 claims succeeds and renders **“13 of 12 free claims.”** This contradicts the public 12-claim limit and is not covered by the current `@claim:free-workshop` check.
+2. `npm run test:e2e` failed twice with 21/22 checks because the route/theme/viewport accessibility matrix exceeds the default 30-second per-test limit. The matrix passes alone, taking 35.9 seconds locally and 31.5 seconds live.
 
-## What changed
+Full evidence and exact results are in `.factory/verification-11.md`.
 
-- The demo home wordmark opens `/`, discards demo map and theme data, restores the real theme and map, and focuses the landing h1.
-- Direct `/?demo=1` and `/demo` entry show the completed causal-inference sample, banner, reset, and safe exit.
-- `free-workshop` now claims only the tested 12-claim limit.
-- The self-assessment test proves saved status, explanation, next question, reload, and history.
-- New `theme-storage` claim proves separate real/demo choices and demo cleanup.
-- First-screen outcome text, task labels, Source on GitHub, 404 wording, legal copy, and README wording are plain and consistent.
-- The standalone 404 now meets dark-theme contrast.
-- Route tests cover titles, metadata, real URLs, browser history, heading focus, legal links, and 404 behavior.
+## What was checked
 
-The complete finding-to-change-to-evidence map is in `.factory/polish-2.md`.
+- All 13 commands in `.factory/claims.json` ran separately first and passed.
+- The cold first screen clearly states the job, audience, first action, and result; the one-click sample works.
+- `npm ci`, unit tests, typecheck, lint, audit, production build, and response-policy checks passed.
+- The live create, rehearsal, validation, persistence, removal, undo, malformed-import, keyboard, focus, demo-isolation, and storage-failure paths passed.
+- Live outgoing requests stayed on the product origin; response security and cache headers passed.
+- Desktop and 390px layouts, light/dark themes, 200% text, reduced motion, and Axe serious/critical checks passed.
+- Live offline reload and service-worker update passed.
+- Lighthouse scored 99 performance, 100 accessibility, 100 best practices, and 100 SEO. LCP was 1.44 seconds and CLS was 0.
+- Initial JavaScript was 12,243 bytes gzip, CSS 5,182 bytes gzip, fonts 0 bytes, and hero AVIF 74,110 bytes.
+- Local and live hashes matched for HTML, JavaScript, CSS, hero, service worker, manifest, and 404 page.
 
-## Verification
-
-From clean clone `/tmp/kbm-polish-2-clean.JH4EhW`:
-
-```text
-npm ci                                      PASS — 59 packages, 0 vulnerabilities
-npm test                                    PASS — 10/10
-npm run lint                                PASS
-npm run build                               PASS — dist/index.html produced
-13 claims.json commands, run separately     PASS — 13/13
-npm run test:e2e                            PASS — 22/22
-npm run test:response-policy                PASS
-```
-
-Post-deploy:
-
-```text
-verify-url.sh live home                     PASS — no console errors; title/lang/h1/main/alt/buttons pass
-PLAYWRIGHT_BASE_URL=<live> npm run test:e2e PASS — 22/22
-Axe page/viewport/theme matrix              PASS — 20/20, zero serious or critical issues
-Live Lighthouse home                       100 performance / 100 accessibility / 100 best practices / 100 SEO
-Live Lighthouse demo                       100 performance / 100 accessibility / 100 best practices / 100 SEO
-Live route/status crawl                     PASS — product routes 200; unknown route 404
-Live security headers                       PASS
-Live/local JS and CSS hashes                MATCH
-```
-
-Performance remains well inside the static product budgets: initial JS is 12.30 kB gzip, CSS is 5.17 kB gzip, and the hero AVIF is 74.11 kB. Live LCP was 1.4 s on home and 1.1 s on demo; CLS was 0 on both.
-
-Evidence is under `.factory/qa-artifacts/` with the `polish-2-` prefix. Key files include the first-screen mobile/desktop images, demo mobile image, dark 404 image, local/live Lighthouse JSON, and local/live URL-verifier reports.
+No product code was modified. Verification evidence was added under `.factory/evidence-11/`.
 
 ## Run and verify
 
 ```sh
 npm ci
 npm test
+npm run typecheck
 npm run lint
 npm run build
 npm run test:e2e
 npm run test:response-policy
 ```
 
-To verify the deployed build:
+Run each command in `.factory/claims.json` separately before the remaining checks.
 
-```sh
-PLAYWRIGHT_BASE_URL=https://knowledge-boundary-map.sociobot.in npm run test:e2e
-```
+## Required next steps
 
-## Deployment
+1. Enforce the 12-claim limit for JSON imports and add import cases to `@claim:free-workshop`.
+2. Split the accessibility/mobile matrix or give that matrix a justified timeout so `npm run test:e2e` passes repeatedly without command changes.
+3. Re-run all claim commands, the exact full suite, build, live flow, offline update, accessibility matrix, and deployment-identity hashes.
 
-Build output is `dist/`. The production upload targeted only the existing `sf-knowledge-boundary-map` Static Web App. No shared service, database, vault, DNS record, or unrelated resource was read or changed.
-
-## Known gaps and next steps
-
-None within the product brief or review scope. There is no backend, account, payment, runtime model, or sync surface in this release.
+There is no backend, sign-in, product-unlock call, or runtime model feature in this release. No related service or shared resource was inspected or changed.
