@@ -21,6 +21,6 @@ describe('static hosting response policy', () => {
 
   it('@finding:404-metadata gives the static 404 complete route metadata and shared controls', async () => {
     const html = await readFile(new URL('../public/404.html', import.meta.url), 'utf8');
-    for (const token of ['name="description"', 'rel="canonical"', 'property="og:title"', 'name="twitter:card"', 'id="theme-toggle"', 'Source on GitHub', 'build polish-2']) expect(html).toContain(token);
+    for (const token of ['name="description"', 'rel="canonical"', 'property="og:title"', 'name="twitter:card"', 'id="theme-toggle"', 'Source on GitHub', 'build repair-9']) expect(html).toContain(token);
   });
 });

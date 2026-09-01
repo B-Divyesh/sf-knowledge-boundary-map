@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { asCsv, makeClaim, recordRehearsal, sanitizeMap, validateRehearsal } from '../src/model';
+import { asCsv, FREE_CLAIM_LIMIT, makeClaim, recordRehearsal, sanitizeMap, validateRehearsal } from '../src/model';
 
 describe('claim rehearsal', () => {
   it('requires a produced explanation and next question', () => {
@@ -63,6 +63,18 @@ describe('portable map data', () => {
     expect(map.claims[0].rehearsals[0].teachBack).toHaveLength(5000);
     expect(map.claims[0].rehearsals[0].counterexample).toHaveLength(2000);
     expect(map.claims[0].rehearsals[0].nextProbe).toHaveLength(1000);
+  });
+
+  it('accepts an imported map at the free limit and rejects one claim over it', () => {
+    const claims = Array.from({ length: FREE_CLAIM_LIMIT + 1 }, (_, index) => ({
+      id: `claim-${index + 1}`,
+      title: `Imported claim ${index + 1}`,
+      prerequisiteIds: [],
+    }));
+    const atLimit = sanitizeMap({ version: 1, topic: 'Import boundary', claims: claims.slice(0, FREE_CLAIM_LIMIT) }, { maxClaims: FREE_CLAIM_LIMIT });
+    expect(atLimit.claims).toHaveLength(FREE_CLAIM_LIMIT);
+    expect(() => sanitizeMap({ version: 1, topic: 'Over limit', claims }, { maxClaims: FREE_CLAIM_LIMIT }))
+      .toThrow('This file has 13 claims. Each map holds up to 12 claims. Remove 1 claim and import it again.');
   });
 
   it('escapes CSV fields', () => {

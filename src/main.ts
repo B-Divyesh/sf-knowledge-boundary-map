@@ -3,7 +3,7 @@ import { asCsv, EMPTY_MAP, FREE_CLAIM_LIMIT, makeClaim, recordRehearsal, sanitiz
 
 const STORAGE_KEY = 'kbm:map:v1';
 const THEME_KEY = 'kbm:theme';
-const BUILD_ID = import.meta.env.VITE_BUILD_ID || 'polish-2';
+const BUILD_ID = import.meta.env.VITE_BUILD_ID || 'repair-9';
 type RouteOptions = { scroll?: 'top' | { x: number; y: number }; focusHeading?: boolean };
 
 let storageAvailable = true;
@@ -511,7 +511,7 @@ function bindExport(): void {
     const file = (event.target as HTMLInputElement).files?.[0];
     if (!file) return;
     try {
-      const incoming = sanitizeMap(JSON.parse(await file.text()));
+      const incoming = sanitizeMap(JSON.parse(await file.text()), { maxClaims: FREE_CLAIM_LIMIT });
       if (!window.confirm(`Replace this map with “${incoming.topic || 'Untitled topic'}” and its ${incoming.claims.length} claims? Export first if you need a backup.`)) return;
       map = incoming; saveMap(); document.querySelector<HTMLDialogElement>('#export-dialog')?.close(); route(); showToast('Map imported.');
     } catch (error) {

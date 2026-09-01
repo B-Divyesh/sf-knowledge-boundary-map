@@ -28,6 +28,10 @@ export interface MapData {
   claims: Claim[];
 }
 
+export interface MapSanitizeOptions {
+  maxClaims?: number;
+}
+
 export const EMPTY_MAP: MapData = { version: 1, topic: '', claims: [] };
 export const FREE_CLAIM_LIMIT = 12;
 
@@ -62,7 +66,7 @@ export function recordRehearsal(claim: Claim, status: ClaimStatus, teachBack: st
   return { ...claim, ...rehearsal, updatedAt: now, rehearsals: [...claim.rehearsals, rehearsal] };
 }
 
-export function sanitizeMap(value: unknown): MapData {
+export function sanitizeMap(value: unknown, options: MapSanitizeOptions = {}): MapData {
   if (!value || typeof value !== 'object') throw new Error('That file does not contain a boundary map.');
   const source = value as Partial<MapData>;
   if (source.version !== 1 || !Array.isArray(source.claims)) throw new Error('This map format is not supported.');
@@ -107,6 +111,10 @@ export function sanitizeMap(value: unknown): MapData {
   });
   const ids = new Set(claims.map((claim) => claim.id));
   claims.forEach((claim) => claim.prerequisiteIds = claim.prerequisiteIds.filter((id) => ids.has(id) && id !== claim.id));
+  if (options.maxClaims !== undefined && claims.length > options.maxClaims) {
+    const excess = claims.length - options.maxClaims;
+    throw new Error(`This file has ${claims.length} claims. Each map holds up to ${options.maxClaims} claims. Remove ${excess} ${excess === 1 ? 'claim' : 'claims'} and import it again.`);
+  }
   return { version: 1, topic: typeof source.topic === 'string' ? source.topic.slice(0, 120) : '', claims };
 }
 

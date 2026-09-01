@@ -222,7 +222,27 @@ test('@claim:keyboard-dialog opens a claim with Enter and restores focus after E
   await expect(second).toBeFocused();
 });
 
-test('@claim:free-workshop allows twelve claims and shows the clear map limit', async ({ page }) => {
+test('@claim:free-workshop allows twelve claims, restores twelve, and rejects a thirteenth import', async ({ page }) => {
+  const importMap = (count: number, topic: string) => {
+    const now = new Date().toISOString();
+    return {
+      version: 1,
+      topic,
+      claims: Array.from({ length: count }, (_, index) => ({
+        id: `imported-claim-${index + 1}`,
+        title: `Imported claim ${index + 1}`,
+        context: '',
+        prerequisiteIds: [],
+        status: 'untested',
+        teachBack: '',
+        counterexample: '',
+        nextProbe: '',
+        createdAt: now,
+        updatedAt: now,
+        rehearsals: [],
+      })),
+    };
+  };
   await page.evaluate(() => {
     const now = new Date().toISOString();
     localStorage.setItem('kbm:map:v1', JSON.stringify({ version: 1, topic: 'Limit', claims: Array.from({ length: 12 }, (_, index) => ({ id: `claim-${index}`, title: `Claim ${index + 1}`, context: '', prerequisiteIds: [], status: 'untested', teachBack: '', counterexample: '', nextProbe: '', createdAt: now, updatedAt: now, rehearsals: [] })) }));
@@ -231,6 +251,28 @@ test('@claim:free-workshop allows twelve claims and shows the clear map limit', 
   await expect(page.locator('[data-claim-id]')).toHaveCount(12);
   await page.keyboard.press('n');
   await expect(page.getByText('This map holds up to 12 claims.')).toBeVisible();
+  await expect(page.locator('[data-claim-id]')).toHaveCount(12);
+  await page.getByRole('button', { name: 'Close' }).click();
+
+  await page.getByRole('button', { name: 'Export' }).click();
+  page.once('dialog', dialog => dialog.accept());
+  await page.locator('#import-file').setInputFiles({
+    name: 'twelve-claims.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from(JSON.stringify(importMap(12, 'At the import limit'))),
+  });
+  await expect(page.getByText('Map imported.')).toBeVisible();
+  await expect(page.getByLabel('Topic name')).toHaveValue('At the import limit');
+  await expect(page.locator('[data-claim-id]')).toHaveCount(12);
+
+  await page.getByRole('button', { name: 'Export' }).click();
+  await page.locator('#import-file').setInputFiles({
+    name: 'thirteen-claims.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from(JSON.stringify(importMap(13, 'Over the import limit'))),
+  });
+  await expect(page.locator('#import-errors')).toContainText('This file has 13 claims. Each map holds up to 12 claims. Remove 1 claim and import it again.');
+  await expect(page.getByLabel('Topic name')).toHaveValue('At the import limit');
   await expect(page.locator('[data-claim-id]')).toHaveCount(12);
 });
 
@@ -394,33 +436,37 @@ test('@finding:legal-and-prerequisite-targets stay at least 44px at desktop and 
   }
 });
 
-test('all public pages pass the accessibility and mobile-overflow matrix in both themes', async ({ browser }) => {
-  const paths = ['/', '/demo', '/privacy', '/terms', '/404.html'];
-  for (const colorScheme of ['light', 'dark'] as const) {
-    for (const viewport of [{ width: 1366, height: 900 }, { width: 390, height: 844 }]) {
-      for (const path of paths) {
-        const context = await browser.newContext({ colorScheme, viewport });
-        const page = await context.newPage();
-        const errors: string[] = [];
-        page.on('console', message => { if (message.type() === 'error') errors.push(message.text()); });
-        page.on('pageerror', error => errors.push(error.message));
-        try {
-          await page.goto(path);
-          if (await page.locator('html').getAttribute('data-theme') !== colorScheme) {
-            await page.getByRole('button', { name: `Use ${colorScheme} theme` }).click();
-          }
-          await expect(page.locator('main h1')).toHaveCount(1);
-          expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
-          const axe = await new AxeBuilder({ page }).analyze();
-          expect(axe.violations.filter((item) => ['serious', 'critical'].includes(item.impact ?? '')), `${path} ${viewport.width}px ${colorScheme}`).toEqual([]);
-          expect(errors, `${path} ${viewport.width}px ${colorScheme} console`).toEqual([]);
-        } finally {
-          await context.close();
+const accessibilityMatrixCases = [
+  { name: 'desktop light', colorScheme: 'light', viewport: { width: 1366, height: 900 } },
+  { name: 'desktop dark', colorScheme: 'dark', viewport: { width: 1366, height: 900 } },
+  { name: '390px light', colorScheme: 'light', viewport: { width: 390, height: 844 } },
+  { name: '390px dark', colorScheme: 'dark', viewport: { width: 390, height: 844 } },
+] as const;
+
+for (const matrixCase of accessibilityMatrixCases) {
+  test(`all public pages pass the accessibility and mobile-overflow matrix: ${matrixCase.name}`, async ({ browser }) => {
+    const context = await browser.newContext({ colorScheme: matrixCase.colorScheme, viewport: matrixCase.viewport });
+    const page = await context.newPage();
+    const errors: string[] = [];
+    page.on('console', message => { if (message.type() === 'error') errors.push(message.text()); });
+    page.on('pageerror', error => errors.push(error.message));
+    try {
+      for (const path of ['/', '/demo', '/privacy', '/terms', '/404.html']) {
+        await page.goto(path);
+        if (await page.locator('html').getAttribute('data-theme') !== matrixCase.colorScheme) {
+          await page.getByRole('button', { name: `Use ${matrixCase.colorScheme} theme` }).click();
         }
+        await expect(page.locator('main h1')).toHaveCount(1);
+        expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+        const axe = await new AxeBuilder({ page }).analyze();
+        expect(axe.violations.filter((item) => ['serious', 'critical'].includes(item.impact ?? '')), `${path} ${matrixCase.name}`).toEqual([]);
+        expect(errors, `${path} ${matrixCase.name} console`).toEqual([]);
       }
+    } finally {
+      await context.close();
     }
-  }
-});
+  });
+}
 
 test('routes, 404, mobile layout, and accessibility work', async ({ page }) => {
   for (const [path, heading] of [['/privacy', 'Privacy'], ['/terms', 'Terms']] as const) {
