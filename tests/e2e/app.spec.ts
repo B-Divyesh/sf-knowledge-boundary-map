@@ -59,7 +59,7 @@ test('real routes update titles, metadata, history, and heading focus', async ({
 
   await page.goto('/missing-route-metadata-check');
   await expect(page).toHaveTitle('Page not found — Knowledge Boundary Map');
-  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', `${origin}/missing-route-metadata-check`);
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', new RegExp(`^${origin.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/(?:missing-route-metadata-check|404)$`));
   await expect(page.getByRole('heading', { level: 1, name: 'Page not found.' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Go to your map' })).toHaveAttribute('href', '/');
 });

@@ -52,3 +52,51 @@ Checked 2026-09-01 after polish round 2. This is the exact visible text from the
 | Follow-up question or task | Next question |
 | Isolated sample experience | Demo |
 | Browser-key separation | Browser keys beginning with `demo:` |
+
+## Shared page text
+
+| Copy | Words | Result |
+|---|---:|---|
+| Skip to your map | 4 | Pass |
+| Knowledge Boundary Map | 3 | Pass |
+| Boundary Map | 2 | Pass |
+| Demo | 1 | Pass |
+| Privacy | 1 | Pass |
+| Private map practice for self-learners | 5 | Pass |
+| Terms | 1 | Pass |
+| Source on GitHub | 3 | Pass |
+| Built by Param Factory · build polish-2 | 7 | Pass |
+
+## README prose audit
+
+| Copy | Words | Result |
+|---|---:|---|
+| Knowledge Boundary Map is a private practice map stored in your browser. | 12 | Pass |
+| It helps self-learners separate “I recognize this” from “I can explain this.” | 12 | Pass |
+| Pin a claim, connect prerequisites, run a 90-second teach-back, name a boundary, and record your next question. | 17 | Pass |
+| Use it after reading, watching, or taking notes on a topic. | 11 | Pass |
+| It does not fact-check claims or measure intelligence. | 8 | Pass |
+| It shows your recorded evidence and uncertainty so you can pick the next question. | 14 | Pass |
+| Your map stays in this browser unless you export it. | 10 | Pass |
+| There are no accounts, analytics, or trackers. | 7 | Pass |
+| The app loads no fonts or scripts from other sites. | 10 | Pass |
+| JSON keeps the full map and can be restored here. | 10 | Pass |
+| CSV exports a readable table. | 5 | Pass |
+| The one-click sample is at `/demo` or `/?demo=1`. | 8 | Pass |
+| Sample changes use browser keys beginning with `demo:`. | 8 | Pass |
+| The claim map and rehearsal dialog work with a keyboard. | 10 | Pass |
+| The app reloads offline after your first visit. | 8 | Pass |
+| Each map holds up to 12 claims. | 7 | Pass |
+| Requires Node.js 20 or newer. | 5 | Pass |
+| The build writes the deployable site to `dist/`, with `index.html` at its root. | 13 | Pass |
+| `staticwebapp.config.json` sends app routes to `index.html` and adds security headers. | 10 | Pass |
+| The factory owns deployment and DNS. | 6 | Pass |
+| Claims stay in this browser. | 5 | Pass |
+| Demo changes use browser keys beginning with `demo:`. | 8 | Pass |
+| Start for real and the home wordmark discard those changes. | 10 | Pass |
+| Export before clearing site data or switching browsers. | 8 | Pass |
+| `/privacy` and `/terms` document the exact behavior. | 7 | Pass |
+| The visual system and generated-image provenance are recorded in `.factory/design.md`. | 10 | Pass |
+| Licensed under MIT; see LICENSE. | 5 | Pass |
+
+No sentence exceeds 22 words. No banned wording or conflicting product term remains.
