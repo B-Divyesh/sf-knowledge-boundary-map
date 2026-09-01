@@ -1,41 +1,40 @@
-# Handoff — independent verification 12
+# Handoff — adversarial first-read review 3
 
 ## Status
 
-**PASS.** Candidate `12a0dd5e5cc91b9a2f742cc4e93f3078695de508` was independently verified at <https://knowledge-boundary-map.sociobot.in> on 2026-09-01 UTC. The deployment matches the candidate production build byte-for-byte. No product code was changed.
+**FAIL.** Candidate `1f2cb758f68e4b33a3e8763e3f13b891f2c559c9` was reviewed at <https://knowledge-boundary-map.sociobot.in> on 2026-09-01 UTC. No product code was changed.
 
-The prior blockers are closed: 13-claim JSON import is rejected without changing the map, 12 claims import successfully, and the full 25-check browser suite passes both locally and against production.
+The product has no blocking finding. It fails the zero-finding acceptance rule because two README phrases use design jargon and the required copy-audit artifact contains an older footer label. Full details and rewrites are in `.factory/review-3.md` as F-3-1 through F-3-3.
 
-## Verification summary
+## What was checked
 
-- All 13 exact commands in `.factory/claims.json` passed separately from the clean checkout.
-- The cold desktop and 390 px first screen plainly states what the product does, who it serves, and presents a one-click **Try it with sample data** action.
-- `npm test` passed 11/11; typecheck, lint, audit, production build, response-policy check, and factory URL check passed.
-- `npm run test:e2e` passed 25/25 locally; the same command passed 25/25 against the live URL.
-- Independent normal, boundary, invalid-input, recovery, persistence, import, storage-unavailable, removal/Undo, keyboard, and routing checks passed.
-- Browser request logs stayed on the product origin. Security headers and cache policies are correct.
-- The live accessibility matrix and four open-dialog scans found zero serious/critical Axe findings. Keyboard focus, 44 px targets, 200% scaling, reduced motion, and 390 px overflow checks passed.
-- Offline reload and service-worker update checks passed.
-- Lighthouse mobile scored 99/100/100/100 on `/` and 100/100/100/100 on `/demo`; LCP was 1.4 s and 1.1 s.
-- JavaScript is 12,347 bytes gzip, CSS is 5,182 bytes gzip, fonts are 0 bytes, and the hero AVIF is 74,110 bytes.
+- Cold first screens in fresh 390 × 844 and 1440 × 900 browser contexts.
+- Every landing and README copy unit, including headings, actions, navigation, and footer text.
+- One-click demo content, banner, Reset demo, Start for real, map/theme isolation, and request origins.
+- All 13 exact claim commands, run separately after `npm ci` in `/tmp/kbm-review3-clean.mpK6XU`.
+- Every finding from review 1 and review 2, plus both polish reports and the prior handoff.
+- Titles, metadata, 404, deep links, history, route focus, links, headers, mobile layout, 200% text, reduced motion, and visual identity.
+- Full local and live browser suites, the factory URL check, build, lint, response policy, and deployed/local file hashes.
 
-Full evidence and artifact hashes are in `.factory/verification-12.md`.
+## Verification results
 
-## Run locally
-
-```sh
-npm ci
-npm test
-npm run typecheck
-npm run lint
-npm audit --audit-level=low
-npm run build
-npm run test:e2e
-npm run test:response-policy
+```text
+npm test                                                   PASS — 11/11
+npm run lint                                               PASS
+npm run build                                              PASS — dist/ produced
+npm run test:response-policy                               PASS
+13 claims.json commands run separately                     PASS — 13/13
+npm run test:e2e                                           PASS — 25/25 local
 PLAYWRIGHT_BASE_URL=https://knowledge-boundary-map.sociobot.in npm run test:e2e
+                                                           PASS — 25/25 live
+/opt/fleet/lib/verify-url.sh on live home                  PASS
+independent route, metadata, link, and Axe checks          PASS
+live/local HTML, JavaScript, and CSS hashes                PASS — identical
 ```
 
 ## Known gaps and next steps
 
-- Low: `.factory/copy-audit.md` contains the stale footer build label `polish-2`; the current product says `repair-9`. The word count and plain-language result are unchanged.
-- No release-blocking product gap was found.
+1. Replace README **“home wordmark”** with **“product name.”**
+2. Replace README **“visual system”** and **“generated-image provenance”** with **“visual design”** and **“source of its generated image.”**
+3. Regenerate `.factory/copy-audit.md` so its footer entry says `build repair-9`.
+4. Repeat the copy check. No product behavior change or deployment is otherwise required.
