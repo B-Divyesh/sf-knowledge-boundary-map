@@ -1,6 +1,6 @@
 # Landing copy audit
 
-Checked 2026-09-01 after polish round 2. This is the exact visible text from the landing page’s `<main>`, including buttons, headings, sample-map labels, and the hero caption. Every sentence is 22 words or fewer. No banned marketing wording appears.
+Checked 2026-09-01 after polish round 3. This is the exact visible text from the landing page’s `<main>`, including buttons, headings, sample-map labels, and the hero caption. Every sentence is 22 words or fewer. No banned marketing wording appears.
 
 | Copy | Words | Result |
 |---|---:|---|
@@ -65,7 +65,7 @@ Checked 2026-09-01 after polish round 2. This is the exact visible text from the
 | Private map practice for self-learners | 5 | Pass |
 | Terms | 1 | Pass |
 | Source on GitHub | 3 | Pass |
-| Built by Param Factory · build polish-2 | 7 | Pass |
+| Built by Param Factory · build polish-3 | 7 | Pass |
 
 ## README prose audit
 
@@ -93,10 +93,10 @@ Checked 2026-09-01 after polish round 2. This is the exact visible text from the
 | The factory owns deployment and DNS. | 6 | Pass |
 | Claims stay in this browser. | 5 | Pass |
 | Demo changes use browser keys beginning with `demo:`. | 8 | Pass |
-| Start for real and the home wordmark discard those changes. | 10 | Pass |
+| Select Start for real or the product name to discard those changes. | 12 | Pass |
 | Export before clearing site data or switching browsers. | 8 | Pass |
 | `/privacy` and `/terms` document the exact behavior. | 7 | Pass |
-| The visual system and generated-image provenance are recorded in `.factory/design.md`. | 10 | Pass |
+| The visual design and source of its generated image are documented in `.factory/design.md`. | 14 | Pass |
 | Licensed under MIT; see LICENSE. | 5 | Pass |
 
 No sentence exceeds 22 words. No banned wording or conflicting product term remains.

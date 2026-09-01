@@ -37,6 +37,6 @@ The build writes the deployable site to `dist/`, with `index.html` at its root. 
 
 ## Data and safety
 
-Claims stay in this browser. Demo changes use browser keys beginning with `demo:`. **Start for real** and the home wordmark discard those changes. Export before clearing site data or switching browsers. `/privacy` and `/terms` document the exact behavior. The visual system and generated-image provenance are recorded in `.factory/design.md`.
+Claims stay in this browser. Demo changes use browser keys beginning with `demo:`. Select **Start for real** or the product name to discard those changes. Export before clearing site data or switching browsers. `/privacy` and `/terms` document the exact behavior. The visual design and source of its generated image are documented in `.factory/design.md`.
 
 Licensed under MIT; see [LICENSE](LICENSE).

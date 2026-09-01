@@ -3,7 +3,7 @@ import { asCsv, EMPTY_MAP, FREE_CLAIM_LIMIT, makeClaim, recordRehearsal, sanitiz
 
 const STORAGE_KEY = 'kbm:map:v1';
 const THEME_KEY = 'kbm:theme';
-const BUILD_ID = import.meta.env.VITE_BUILD_ID || 'repair-9';
+const BUILD_ID = import.meta.env.VITE_BUILD_ID || 'polish-3';
 type RouteOptions = { scroll?: 'top' | { x: number; y: number }; focusHeading?: boolean };
 
 let storageAvailable = true;
