@@ -1,0 +1,199 @@
+{
+  "origin": "https://knowledge-boundary-map.sociobot.in",
+  "checkedAt": "2026-09-01T22:37:08.906Z",
+  "coldDemo": {
+    "errors": 0,
+    "requestOrigins": [
+      "https://knowledge-boundary-map.sociobot.in"
+    ],
+    "realDemoIsolation": "PASS",
+    "reset": "PASS",
+    "productNameExit": "PASS",
+    "queryEntry": "PASS"
+  },
+  "routeMatrix": [
+    {
+      "theme": "light",
+      "width": 390,
+      "path": "/",
+      "status": 200,
+      "axeSeriousCritical": 0,
+      "overflowPx": 0,
+      "errors": 0
+    },
+    {
+      "theme": "light",
+      "width": 390,
+      "path": "/demo",
+      "status": 200,
+      "axeSeriousCritical": 0,
+      "overflowPx": 0,
+      "errors": 0
+    },
+    {
+      "theme": "light",
+      "width": 390,
+      "path": "/privacy",
+      "status": 200,
+      "axeSeriousCritical": 0,
+      "overflowPx": 0,
+      "errors": 0
+    },
+    {
+      "theme": "light",
+      "width": 390,
+      "path": "/terms",
+      "status": 200,
+      "axeSeriousCritical": 0,
+      "overflowPx": 0,
+      "errors": 0
+    },
+    {
+      "theme": "light",
+      "width": 390,
+      "path": "/missing-polish-3",
+      "status": 404,
+      "axeSeriousCritical": 0,
+      "overflowPx": 0,
+      "errors": 0
+    },
+    {
+      "theme": "light",
+      "width": 1366,
+      "path": "/",
+      "status": 200,
+      "axeSeriousCritical": 0,
+      "overflowPx": 0,
+      "errors": 0
+    },
+    {
+      "theme": "light",
+      "width": 1366,
+      "path": "/demo",
+      "status": 200,
+      "axeSeriousCritical": 0,
+      "overflowPx": 0,
+      "errors": 0
+    },
+    {
+      "theme": "light",
+      "width": 1366,
+      "path": "/privacy",
+      "status": 200,
+      "axeSeriousCritical": 0,
+      "overflowPx": 0,
+      "errors": 0
+    },
+    {
+      "theme": "light",
+      "width": 1366,
+      "path": "/terms",
+      "status": 200,
+      "axeSeriousCritical": 0,
+      "overflowPx": 0,
+      "errors": 0
+    },
+    {
+      "theme": "light",
+      "width": 1366,
+      "path": "/missing-polish-3",
+      "status": 404,
+      "axeSeriousCritical": 0,
+      "overflowPx": 0,
+      "errors": 0
+    },
+    {
+      "theme": "dark",
+      "width": 390,
+      "path": "/",
+      "status": 200,
+      "axeSeriousCritical": 0,
+      "overflowPx": 0,
+      "errors": 0
+    },
+    {
+      "theme": "dark",
+      "width": 390,
+      "path": "/demo",
+      "status": 200,
+      "axeSeriousCritical": 0,
+      "overflowPx": 0,
+      "errors": 0
+    },
+    {
+      "theme": "dark",
+      "width": 390,
+      "path": "/privacy",
+      "status": 200,
+      "axeSeriousCritical": 0,
+      "overflowPx": 0,
+      "errors": 0
+    },
+    {
+      "theme": "dark",
+      "width": 390,
+      "path": "/terms",
+      "status": 200,
+      "axeSeriousCritical": 0,
+      "overflowPx": 0,
+      "errors": 0
+    },
+    {
+      "theme": "dark",
+      "width": 390,
+      "path": "/missing-polish-3",
+      "status": 404,
+      "axeSeriousCritical": 0,
+      "overflowPx": 0,
+      "errors": 0
+    },
+    {
+      "theme": "dark",
+      "width": 1366,
+      "path": "/",
+      "status": 200,
+      "axeSeriousCritical": 0,
+      "overflowPx": 0,
+      "errors": 0
+    },
+    {
+      "theme": "dark",
+      "width": 1366,
+      "path": "/demo",
+      "status": 200,
+      "axeSeriousCritical": 0,
+      "overflowPx": 0,
+      "errors": 0
+    },
+    {
+      "theme": "dark",
+      "width": 1366,
+      "path": "/privacy",
+      "status": 200,
+      "axeSeriousCritical": 0,
+      "overflowPx": 0,
+      "errors": 0
+    },
+    {
+      "theme": "dark",
+      "width": 1366,
+      "path": "/terms",
+      "status": 200,
+      "axeSeriousCritical": 0,
+      "overflowPx": 0,
+      "errors": 0
+    },
+    {
+      "theme": "dark",
+      "width": 1366,
+      "path": "/missing-polish-3",
+      "status": 404,
+      "axeSeriousCritical": 0,
+      "overflowPx": 0,
+      "errors": 0
+    }
+  ],
+  "reducedMotion": {
+    "elementsWithMaterialDuration": 0
+  }
+}

@@ -96,7 +96,7 @@ Checked 2026-09-01 after polish round 3. This is the exact visible text from the
 | Select Start for real or the product name to discard those changes. | 12 | Pass |
 | Export before clearing site data or switching browsers. | 8 | Pass |
 | `/privacy` and `/terms` document the exact behavior. | 7 | Pass |
-| The visual design and source of its generated image are documented in `.factory/design.md`. | 14 | Pass |
+| The visual design and source of its generated image are documented in `.factory/design.md`. | 13 | Pass |
 | Licensed under MIT; see LICENSE. | 5 | Pass |
 
 No sentence exceeds 22 words. No banned wording or conflicting product term remains.
