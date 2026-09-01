@@ -84,7 +84,9 @@ h3 { font-size: 20px; line-height: 1.25; }
 .button[disabled] { cursor: not-allowed; opacity: .5; transform: none; box-shadow: none; }
 .hero { display: grid; grid-template-columns: minmax(0, 1.04fr) minmax(340px, .96fr); gap: clamp(32px, 6vw, 80px); align-items: center; min-height: 560px; }
 .hero-copy { padding: 32px 0; }
-.hero-actions { display: flex; flex-wrap: wrap; gap: 12px; margin: 28px 0 18px; }
+.hero-actions { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 12px; margin: 28px 0 18px; }
+.sample-action { display: grid; gap: 5px; }
+.sample-action > span { max-width: 34ch; color: var(--muted); font-size: 13px; }
 .hero-facts { display: grid; gap: 7px; max-width: 540px; padding: 0; margin: 0; list-style: none; color: var(--muted); font-size: 14px; }
 .hero-facts li { display: flex; align-items: flex-start; gap: 8px; }
 .hero-facts svg { flex: 0 0 auto; margin-top: 3px; }

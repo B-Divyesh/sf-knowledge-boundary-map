@@ -17,7 +17,7 @@ Use it after reading, watching, or taking notes on a topic. It does not fact-che
 - The one-click sample is at `/demo` or `/?demo=1`. Sample changes use browser keys beginning with `demo:`.
 - The claim map and rehearsal dialog work with a keyboard.
 - The app reloads offline after your first visit.
-- Each map holds up to 12 claims and includes the complete rehearsal and export flow.
+- Each map holds up to 12 claims.
 
 ## Develop and verify
 
@@ -37,6 +37,6 @@ The build writes the deployable site to `dist/`, with `index.html` at its root. 
 
 ## Data and safety
 
-Claims stay in this browser. Demo data uses a separate `demo:` namespace and is discarded by **Start for real**. Export before clearing site data or switching browsers. `/privacy` and `/terms` document the exact behavior. The visual system and generated-image provenance are recorded in `.factory/design.md`.
+Claims stay in this browser. Demo changes use browser keys beginning with `demo:`. **Start for real** and the home wordmark discard those changes. Export before clearing site data or switching browsers. `/privacy` and `/terms` document the exact behavior. The visual system and generated-image provenance are recorded in `.factory/design.md`.
 
 Licensed under MIT; see [LICENSE](LICENSE).

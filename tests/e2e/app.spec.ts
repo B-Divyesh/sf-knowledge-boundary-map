@@ -34,7 +34,34 @@ test('loads with an understandable first screen and no console errors', async ({
   await expect(page.getByRole('heading', { level: 1, name: 'Test what you can explain.' })).toBeVisible();
   await expect(page.getByText('For self-learners who want to separate recognition from an explanation they can produce.')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Try it with sample data' })).toBeVisible();
+  await expect(page.getByText('Opens a completed causal-inference map.')).toBeVisible();
   expect(errors).toEqual([]);
+});
+
+test('real routes update titles, metadata, history, and heading focus', async ({ page }) => {
+  const origin = new URL(page.url()).origin;
+  await page.getByRole('link', { name: 'Privacy', exact: true }).first().click();
+  await expect(page).toHaveURL(`${origin}/privacy`);
+  await expect(page).toHaveTitle('Privacy — Knowledge Boundary Map');
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', `${origin}/privacy`);
+  await expect(page.locator('meta[name="description"]')).toHaveAttribute('content', /stores in your browser/);
+  await expect(page.locator('meta[property="og:title"]')).toHaveAttribute('content', 'Privacy — Knowledge Boundary Map');
+  await expect(page.getByRole('heading', { level: 1, name: 'Privacy' })).toBeFocused();
+  await expect(page.getByRole('link', { name: 'Terms', exact: true })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Source on GitHub' })).toHaveAttribute('href', 'https://github.com/B-Divyesh/sf-knowledge-boundary-map');
+
+  await page.getByRole('link', { name: 'Terms', exact: true }).click();
+  await expect(page).toHaveURL(`${origin}/terms`);
+  await expect(page).toHaveTitle('Terms — Knowledge Boundary Map');
+  await expect(page.getByRole('heading', { level: 1, name: 'Terms' })).toBeFocused();
+  await page.goBack();
+  await expect(page.getByRole('heading', { level: 1, name: 'Privacy' })).toBeFocused();
+
+  await page.goto('/missing-route-metadata-check');
+  await expect(page).toHaveTitle('Page not found — Knowledge Boundary Map');
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', `${origin}/missing-route-metadata-check`);
+  await expect(page.getByRole('heading', { level: 1, name: 'Page not found.' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Go to your map' })).toHaveAttribute('href', '/');
 });
 
 test('@claim:demo-sandbox opens a completed mixed-status sample without touching the real map', async ({ page }) => {
@@ -50,6 +77,33 @@ test('@claim:demo-sandbox opens a completed mixed-status sample without touching
   await page.getByRole('button', { name: 'Start for real' }).click();
   expect(await page.evaluate(() => localStorage.getItem('demo:kbm:map:v1'))).toBeNull();
   expect(await page.evaluate(() => localStorage.getItem('kbm:map:v1'))).toContain('REAL MARKER');
+
+  await page.goto('/?demo=1');
+  await expect(page).toHaveTitle('Demo — Knowledge Boundary Map');
+  await expect(page.getByLabel('Demo controls')).toBeVisible();
+  await expect(page.locator('[data-claim-id]')).toHaveCount(3);
+  const firstSampleId = await page.locator('[data-claim-id]').first().getAttribute('data-claim-id');
+  await page.getByRole('button', { name: 'Reset demo' }).click();
+  await expect.poll(() => page.locator('[data-claim-id]').first().getAttribute('data-claim-id')).not.toBe(firstSampleId);
+  await page.getByRole('button', { name: 'Start for real' }).click();
+  expect(await page.evaluate(() => localStorage.getItem('demo:kbm:map:v1'))).toBeNull();
+  expect(await page.evaluate(() => localStorage.getItem('kbm:map:v1'))).toContain('REAL MARKER');
+});
+
+test('@finding:demo-home-exit opens home, focuses its heading, and discards demo data', async ({ page }) => {
+  await page.evaluate(() => localStorage.setItem('kbm:map:v1', JSON.stringify({ version: 1, topic: 'REAL MARKER', claims: [] })));
+  await openDemo(page);
+  await page.getByRole('button', { name: 'Use dark theme' }).click();
+  expect(await page.evaluate(() => localStorage.getItem('demo:kbm:map:v1'))).not.toBeNull();
+  expect(await page.evaluate(() => localStorage.getItem('demo:kbm:theme'))).toBe('dark');
+
+  await page.getByRole('link', { name: 'Knowledge Boundary Map home' }).click();
+
+  await expect(page).toHaveURL(/\/$/);
+  const heading = page.getByRole('heading', { level: 1, name: 'Test what you can explain.' });
+  await expect(heading).toBeVisible();
+  await expect(heading).toBeFocused();
+  expect(await page.evaluate(() => ({ demoMap: localStorage.getItem('demo:kbm:map:v1'), demoTheme: localStorage.getItem('demo:kbm:theme'), realMap: localStorage.getItem('kbm:map:v1') }))).toEqual({ demoMap: null, demoTheme: null, realMap: expect.stringContaining('REAL MARKER') });
 });
 
 test('@claim:local-only keeps map work on the product origin', async ({ browser, baseURL }) => {
@@ -174,15 +228,46 @@ test('@claim:free-workshop allows twelve claims and shows the clear map limit', 
     localStorage.setItem('kbm:map:v1', JSON.stringify({ version: 1, topic: 'Limit', claims: Array.from({ length: 12 }, (_, index) => ({ id: `claim-${index}`, title: `Claim ${index + 1}`, context: '', prerequisiteIds: [], status: 'untested', teachBack: '', counterexample: '', nextProbe: '', createdAt: now, updatedAt: now, rehearsals: [] })) }));
   });
   await page.reload();
+  await expect(page.locator('[data-claim-id]')).toHaveCount(12);
   await page.keyboard.press('n');
   await expect(page.getByText('This map holds up to 12 claims.')).toBeVisible();
+  await expect(page.locator('[data-claim-id]')).toHaveCount(12);
 });
 
-test('@claim:self-assessment-label states that results are not an intelligence score', async ({ page }) => {
+test('@claim:self-assessment-label records and reloads a self-assessment without presenting an objective score', async ({ page }) => {
   await expect(page.getByText('It records your self-assessment. It does not fact-check claims or measure intelligence.')).toBeVisible();
   await openDemo(page);
-  await page.getByRole('button', { name: /^Can explain A correlation/ }).click();
+  await page.getByRole('button', { name: /^Recognize only A confounder/ }).click();
   await expect(page.getByText('This is a self-assessment, not an objective score.')).toBeVisible();
+  await page.getByLabel('Teach it back from memory *').fill('A confounder creates a shared cause of the measured treatment and outcome.');
+  await page.getByLabel('Blocked').check();
+  await page.getByLabel('Next question *').fill('Which variable blocks the backdoor path?');
+  await page.getByRole('button', { name: 'Save self-assessment' }).click();
+  await page.reload();
+  await page.getByRole('button', { name: /^Blocked A confounder/ }).click();
+  await expect(page.getByLabel('Teach it back from memory *')).toHaveValue('A confounder creates a shared cause of the measured treatment and outcome.');
+  await expect(page.getByLabel('Blocked')).toBeChecked();
+  await expect(page.getByLabel('Next question *')).toHaveValue('Which variable blocks the backdoor path?');
+  await expect(page.locator('.history details')).toHaveCount(2);
+  await expect(page.locator('.history')).toContainText('Which variable blocks the backdoor path?');
+});
+
+test('@claim:theme-storage keeps real and demo theme choices separate and removes only the demo choice on exit', async ({ page }) => {
+  await page.getByRole('button', { name: 'Use dark theme' }).click();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  expect(await page.evaluate(() => localStorage.getItem('kbm:theme'))).toBe('dark');
+
+  await openDemo(page);
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+  await page.getByRole('button', { name: 'Use dark theme' }).click();
+  await page.getByRole('button', { name: 'Use light theme' }).click();
+  expect(await page.evaluate(() => ({ real: localStorage.getItem('kbm:theme'), demo: localStorage.getItem('demo:kbm:theme') }))).toEqual({ real: 'dark', demo: 'light' });
+  await page.reload();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+
+  await page.getByRole('button', { name: 'Start for real' }).click();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  expect(await page.evaluate(() => ({ real: localStorage.getItem('kbm:theme'), demo: localStorage.getItem('demo:kbm:theme') }))).toEqual({ real: 'dark', demo: null });
 });
 
 test('@claim:prerequisites keeps selected prerequisite links on a saved claim', async ({ page }) => {
@@ -309,6 +394,34 @@ test('@finding:legal-and-prerequisite-targets stay at least 44px at desktop and 
   }
 });
 
+test('all public pages pass the accessibility and mobile-overflow matrix in both themes', async ({ browser }) => {
+  const paths = ['/', '/demo', '/privacy', '/terms', '/404.html'];
+  for (const colorScheme of ['light', 'dark'] as const) {
+    for (const viewport of [{ width: 1366, height: 900 }, { width: 390, height: 844 }]) {
+      for (const path of paths) {
+        const context = await browser.newContext({ colorScheme, viewport });
+        const page = await context.newPage();
+        const errors: string[] = [];
+        page.on('console', message => { if (message.type() === 'error') errors.push(message.text()); });
+        page.on('pageerror', error => errors.push(error.message));
+        try {
+          await page.goto(path);
+          if (await page.locator('html').getAttribute('data-theme') !== colorScheme) {
+            await page.getByRole('button', { name: `Use ${colorScheme} theme` }).click();
+          }
+          await expect(page.locator('main h1')).toHaveCount(1);
+          expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+          const axe = await new AxeBuilder({ page }).analyze();
+          expect(axe.violations.filter((item) => ['serious', 'critical'].includes(item.impact ?? '')), `${path} ${viewport.width}px ${colorScheme}`).toEqual([]);
+          expect(errors, `${path} ${viewport.width}px ${colorScheme} console`).toEqual([]);
+        } finally {
+          await context.close();
+        }
+      }
+    }
+  }
+});
+
 test('routes, 404, mobile layout, and accessibility work', async ({ page }) => {
   for (const [path, heading] of [['/privacy', 'Privacy'], ['/terms', 'Terms']] as const) {
     await page.goto(path);
@@ -320,5 +433,6 @@ test('routes, 404, mobile layout, and accessibility work', async ({ page }) => {
   await expect(page.getByText('Boundary Map', { exact: true })).toBeVisible();
   await expect(page.getByRole('heading', { level: 2, name: 'Random assignment reduces systematic confounding' })).toBeVisible();
   await page.goto('/definitely-missing');
-  await expect(page.getByRole('heading', { level: 1, name: 'That page is not in this map.' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Page not found.' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Source on GitHub' })).toBeVisible();
 });

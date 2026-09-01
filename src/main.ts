@@ -3,7 +3,7 @@ import { asCsv, EMPTY_MAP, FREE_CLAIM_LIMIT, makeClaim, recordRehearsal, sanitiz
 
 const STORAGE_KEY = 'kbm:map:v1';
 const THEME_KEY = 'kbm:theme';
-const BUILD_ID = import.meta.env.VITE_BUILD_ID || 'polish-1';
+const BUILD_ID = import.meta.env.VITE_BUILD_ID || 'polish-2';
 type RouteOptions = { scroll?: 'top' | { x: number; y: number }; focusHeading?: boolean };
 
 let storageAvailable = true;
@@ -49,7 +49,7 @@ function loadMap(): MapData {
 
 function saveMap(): void {
   const saved = safeSet(STORAGE_KEY, JSON.stringify(map));
-  if (!saved) showToast('This browser blocked local storage. Export before leaving this page.');
+  if (!saved) showToast('This browser blocked saving. Export before leaving this page.');
 }
 
 function sampleMap(): MapData {
@@ -106,7 +106,7 @@ function routeHref(path: string): string {
 function header(): string {
   const dark = document.documentElement.dataset.theme === 'dark';
   return `<header class="site-header">
-    <a class="brand" href="${routeHref('/')}" data-route aria-label="Knowledge Boundary Map home"><span class="brand-mark" aria-hidden="true">↗</span><span class="brand-full">Knowledge Boundary Map</span><span class="brand-short" aria-hidden="true">Boundary Map</span></a>
+    <a class="brand" href="/" data-route${demoMode ? ' data-exit-demo="true"' : ''} aria-label="Knowledge Boundary Map home"><span class="brand-mark" aria-hidden="true">↗</span><span class="brand-full">Knowledge Boundary Map</span><span class="brand-short" aria-hidden="true">Boundary Map</span></a>
     <nav class="header-actions" aria-label="Primary navigation">
       <a class="nav-link" href="${routeHref('/demo')}" data-route>Demo</a>
       <a class="nav-link" href="${routeHref('/privacy')}" data-route>Privacy</a>
@@ -116,23 +116,23 @@ function header(): string {
 }
 
 function footer(): string {
-  return `<footer class="site-footer"><span>Private map practice for self-learners</span><nav class="footer-links" aria-label="Legal"><a href="${routeHref('/privacy')}" data-route>Privacy</a><a href="${routeHref('/terms')}" data-route>Terms</a><a href="https://github.com/B-Divyesh/sf-knowledge-boundary-map" rel="noreferrer">Source</a></nav><span>Built by Param Factory · build ${escapeHtml(BUILD_ID)}</span></footer>`;
+  return `<footer class="site-footer"><span>Private map practice for self-learners</span><nav class="footer-links" aria-label="Legal"><a href="${routeHref('/privacy')}" data-route>Privacy</a><a href="${routeHref('/terms')}" data-route>Terms</a><a href="https://github.com/B-Divyesh/sf-knowledge-boundary-map" rel="noreferrer">Source on GitHub</a></nav><span>Built by Param Factory · build ${escapeHtml(BUILD_ID)}</span></footer>`;
 }
 
 function layout(content: string): string {
   const demoBanner = demoMode ? '<aside class="demo-banner" aria-label="Demo controls"><span><strong>Demo</strong> — sample data, nothing is saved to your real map.</span><span><button class="demo-action" id="reset-demo" type="button">Reset demo</button><button class="demo-action" id="start-real" type="button">Start for real</button></span></aside>' : '';
-  return `<div class="shell">${header()}${demoBanner}${!storageAvailable ? '<p class="license-note storage-warning" role="alert">Local storage is unavailable. Your changes may not survive a refresh; export a copy before leaving.</p>' : ''}${content}${footer()}<p class="visually-hidden" id="route-status" aria-live="polite"></p><div class="toast" id="toast" role="status" aria-live="polite"><span id="toast-message"></span><button type="button" id="toast-action" hidden>Undo</button></div></div>`;
+  return `<div class="shell">${header()}${demoBanner}${!storageAvailable ? '<p class="license-note storage-warning" role="alert">This browser cannot save your changes. Export a copy before leaving.</p>' : ''}${content}${footer()}<p class="visually-hidden" id="route-status" aria-live="polite"></p><div class="toast" id="toast" role="status" aria-live="polite"><span id="toast-message"></span><button type="button" id="toast-action" hidden>Undo</button></div></div>`;
 }
 
 function heroPage(): string {
   return layout(`<main class="site-main" id="main"><section class="hero">
     <div class="hero-copy"><p class="eyebrow">After reading, watching, or taking notes</p><h1>Test what you can explain.</h1>
     <p class="lede">For self-learners who want to separate recognition from an explanation they can produce.</p>
-    <div class="hero-actions"><button class="button primary" id="load-example" type="button">Try it with sample data</button><button class="button quiet" id="start-map" type="button">${icon('plus')} Pin your first claim</button></div>
+    <div class="hero-actions"><div class="sample-action"><button class="button primary" id="load-example" type="button">Try it with sample data</button><span>Opens a completed causal-inference map.</span></div><button class="button quiet" id="start-map" type="button">${icon('plus')} Pin your first claim</button></div>
     <ul class="hero-facts"><li>${icon('lock')} <span>Private: stored in this browser.</span></li><li>Offline: reloads after your first visit.</li><li>Free: up to 12 claims per map.</li></ul></div>
     <figure class="hero-art"><picture><source srcset="/assets/boundary-diorama.avif" type="image/avif"><source srcset="/assets/boundary-diorama.webp" type="image/webp"><img src="/assets/boundary-diorama.webp" width="1152" height="768" fetchpriority="high" decoding="async" alt="Layered paper hills form a path from blue fog past an orange obstacle toward a clear golden marker."></picture><figcaption>Record your own evidence and uncertainty. This tool does not score intelligence.</figcaption></figure>
   </section>
-  <section class="landing-section preview-section" aria-labelledby="preview-title"><div><p class="eyebrow">Live preview</p><h2 id="preview-title">Preview a claim map.</h2><p>Each paper slip keeps one claim, its prerequisites, and your latest self-assessment.</p></div><ol class="preview-map" aria-label="Sample claim map"><li><strong>Correlation is not causation</strong><span>Can explain</span></li><li><strong>A confounder affects both variables</strong><span>Recognize only</span></li><li><strong>Random assignment reduces confounding</strong><span>Blocked · needs both earlier claims</span></li></ol></section>
+  <section class="landing-section preview-section" aria-labelledby="preview-title"><div><p class="eyebrow">Live preview</p><h2 id="preview-title">Preview a claim map.</h2><p>Each claim keeps its prerequisites and your latest self-assessment.</p></div><ol class="preview-map" aria-label="Sample claim map"><li><strong>Correlation is not causation</strong><span>Can explain</span></li><li><strong>A confounder affects both variables</strong><span>Recognize only</span></li><li><strong>Random assignment reduces confounding</strong><span>Blocked · needs both earlier claims</span></li></ol></section>
   <section class="landing-section how-section" aria-labelledby="how-title"><p class="eyebrow">How it works</p><h2 id="how-title">Choose your next question.</h2><ol class="steps-list"><li><strong>Pin a claim.</strong><span>Start with something that feels familiar.</span></li><li><strong>Teach it back.</strong><span>Write what you can produce without notes.</span></li><li><strong>Record a next question.</strong><span>Choose an example or prerequisite to test next.</span></li></ol></section>
   <section class="landing-section limits-section" aria-labelledby="limits-title"><div><p class="eyebrow">Privacy and limits</p><h2 id="limits-title">Your map stays in this browser.</h2><p>Your map stays here unless you export it. There are no accounts, analytics, or trackers. The app loads no fonts or scripts from other sites.</p></div><div><h3>What this does not do</h3><p>It records your self-assessment. It does not fact-check claims or measure intelligence.</p></div></section>
   ${claimDialog()}</main>`);
@@ -143,7 +143,7 @@ function mapPage(): string {
   const limitText = `${map.claims.length} of ${FREE_CLAIM_LIMIT} free claims`;
   const next = nextClaim();
   return layout(`<main class="site-main" id="main">
-    <div class="map-header"><div><p class="eyebrow">Boundary workshop</p><h1>Your explanation map</h1><label for="topic" class="visually-hidden">Topic name</label><input id="topic" class="topic-input" type="text" maxlength="120" value="${escapeHtml(map.topic)}" placeholder="Name this topic (optional)"></div>
+    <div class="map-header"><div><p class="eyebrow">Practice map</p><h1>Your explanation map</h1><label for="topic" class="visually-hidden">Topic name</label><input id="topic" class="topic-input" type="text" maxlength="120" value="${escapeHtml(map.topic)}" placeholder="Name this topic (optional)"></div>
     <div class="button-row"><button class="button primary" id="new-claim" type="button">${icon('plus')} Pin a claim</button><button class="button quiet" id="export-menu" type="button">${icon('download')} Export</button></div></div>
     <p class="visually-hidden" id="boundary-ledger-help">This summary scrolls horizontally on narrow screens. Focus it, then use the Left and Right Arrow keys to review every status.</p>
     <ul class="boundary-ledger" tabindex="0" aria-label="Self-assessed boundary summary" aria-describedby="boundary-ledger-help">${counts.map(([status, count]) => `<li class="ledger-item ${status}"><strong>${count}</strong><span>${statusLabel(status)}</span></li>`).join('')}</ul>
@@ -156,7 +156,7 @@ function mapPage(): string {
 }
 
 function mapContents(): string {
-  if (!map.claims.length) return `<div class="empty-map"><div class="empty-map-inner"><div class="paper-stack" aria-hidden="true"></div><h2>Your boundary is still blank</h2><p>Start with one claim you feel confident about. Testing confidence is the point.</p><button class="button primary" id="empty-add" type="button">Pin a claim</button></div></div>`;
+  if (!map.claims.length) return `<div class="empty-map"><div class="empty-map-inner"><div class="paper-stack" aria-hidden="true"></div><h2>Your claim map is empty</h2><p>Start with one claim you think you can explain.</p><button class="button primary" id="empty-add" type="button">Pin a claim</button></div></div>`;
   const byId = new Map(map.claims.map((claim) => [claim.id, claim]));
   return `<svg class="map-links" id="map-links" aria-hidden="true"></svg><ul class="claim-list" aria-describedby="map-instructions">${map.claims.map((claim, index) => {
     const prerequisiteNames = claim.prerequisiteIds.map((id) => byId.get(id)?.title).filter((name): name is string => Boolean(name));
@@ -179,7 +179,7 @@ function nextClaim(): Claim | undefined {
 
 function claimDialog(): string {
   const atLimit = map.claims.length >= FREE_CLAIM_LIMIT;
-  return `<dialog id="claim-dialog" aria-labelledby="claim-dialog-title"><div class="dialog-paper"><div class="dialog-head"><div><p class="eyebrow">New paper slip</p><h2 id="claim-dialog-title">Pin a claim</h2><p class="muted">Write something specific enough to explain or disprove.</p></div><button class="close-button" type="button" data-close aria-label="Close">×</button></div>
+  return `<dialog id="claim-dialog" aria-labelledby="claim-dialog-title"><div class="dialog-paper"><div class="dialog-head"><div><p class="eyebrow">New claim</p><h2 id="claim-dialog-title">Pin a claim</h2><p class="muted">Write something specific enough to explain or disprove.</p></div><button class="close-button" type="button" data-close aria-label="Close">×</button></div>
     ${atLimit ? `<div class="license-note"><strong>This map holds up to ${FREE_CLAIM_LIMIT} claims.</strong><br>Export JSON or CSV before clearing browser data, then start a new focused map.</div>` : `<form id="claim-form"><div id="claim-errors" class="error-box" role="alert"></div><div class="field"><label for="claim-title">Claim <span aria-hidden="true">*</span></label><input id="claim-title" name="title" type="text" maxlength="160" required aria-describedby="claim-title-hint"><p class="field-hint" id="claim-title-hint">Example: “Gradient descent follows the steepest local decrease.”</p></div><div class="field"><label for="claim-context">What should your explanation cover?</label><textarea id="claim-context" name="context" maxlength="600"></textarea></div>${map.claims.length ? `<fieldset><legend>What must be understood first?</legend><div class="check-list">${map.claims.map((claim) => `<label class="check-option"><input type="checkbox" name="prerequisite" value="${escapeHtml(claim.id)}"><span>${escapeHtml(claim.title)}</span></label>`).join('')}</div></fieldset>` : ''}<div class="button-row"><button class="button primary" type="submit">Pin this claim</button><button class="button quiet" type="button" data-close>Cancel</button></div></form>`}
   </div></dialog>`;
 }
@@ -199,19 +199,19 @@ function rehearsalDialog(): string {
 }
 
 function exportDialog(): string {
-  return `<dialog id="export-dialog" aria-labelledby="export-title"><div class="dialog-paper"><div class="dialog-head"><div><p class="eyebrow">Your data, your way</p><h2 id="export-title">Export or import</h2><p class="muted">JSON keeps the full map and can be restored here. CSV makes a readable table.</p></div><button class="close-button" type="button" data-close aria-label="Close">×</button></div><div id="import-errors" class="error-box" role="alert"></div><div class="button-row"><button class="button primary" id="export-json" type="button">Download JSON</button><button class="button" id="export-csv" type="button">Download CSV</button><label class="button quiet" for="import-file">Import JSON</label><input class="visually-hidden" id="import-file" type="file" accept="application/json,.json"></div><p class="field-hint">Import replaces the map after you confirm.</p></div></dialog>`;
+  return `<dialog id="export-dialog" aria-labelledby="export-title"><div class="dialog-paper"><div class="dialog-head"><div><p class="eyebrow">Map files</p><h2 id="export-title">Export or import</h2><p class="muted">JSON keeps the full map and can be restored here. CSV makes a readable table.</p></div><button class="close-button" type="button" data-close aria-label="Close">×</button></div><div id="import-errors" class="error-box" role="alert"></div><div class="button-row"><button class="button primary" id="export-json" type="button">Download JSON</button><button class="button" id="export-csv" type="button">Download CSV</button><label class="button quiet" for="import-file">Import JSON</label><input class="visually-hidden" id="import-file" type="file" accept="application/json,.json"></div><p class="field-hint">Import replaces the map after you confirm.</p></div></dialog>`;
 }
 
 function privacyPage(): string {
-  return layout(`<main class="site-main legal" id="main"><p class="eyebrow">Plain-language policy</p><h1>Privacy</h1><p class="lede">Your knowledge map stays in your browser.</p><p><strong>Last updated:</strong> August 30, 2026</p><h2>What stays on your device</h2><p>Claims, prerequisites, teach-backs, counterexamples, self-assessments, the topic name, and theme choice are stored in browser local storage. We do not receive or sync this map. Exported files go only where you choose to save them. Demo changes use keys beginning with <code>demo:</code> and are discarded when you start for real.</p><h2>Analytics and imagery</h2><p>There are no accounts, analytics, advertising trackers, or third-party fonts. The app loads no scripts from other sites. The paper landscape was generated specifically for this product through the Param Factory. It depicts no real person and does not analyze your knowledge.</p><h2>Your controls</h2><p>Use Export to keep a portable copy. Clear this site’s browser storage to erase local data. Export before clearing storage or changing browsers.</p><h2>Contact</h2><p>For privacy questions, email <a href="mailto:privacy@sociobot.in">privacy@sociobot.in</a>.</p></main>`);
+  return layout(`<main class="site-main legal" id="main"><p class="eyebrow">Plain-language policy</p><h1>Privacy</h1><p class="lede">Your knowledge map stays in your browser.</p><p><strong>Last updated:</strong> September 1, 2026</p><h2>What stays on your device</h2><p>Claims, prerequisites, teach-backs, counterexamples, self-assessments, the topic name, and theme choice are saved in this browser. We do not receive or sync this map. Exported files go only where you choose to save them. Demo changes use keys beginning with <code>demo:</code> and are discarded when you start for real.</p><h2>Analytics and imagery</h2><p>There are no accounts, analytics, advertising trackers, or third-party fonts. The app loads no scripts from other sites. The paper landscape was generated specifically for this product through the Param Factory. It depicts no real person and does not analyze your knowledge.</p><h2>Your controls</h2><p>Use Export to keep a portable copy. Clear this site’s saved browser data to erase your map and theme choice. Export before clearing this data or changing browsers.</p><h2>Contact</h2><p>For privacy questions, email <a href="mailto:privacy@sociobot.in">privacy@sociobot.in</a>.</p></main>`);
 }
 
 function termsPage(): string {
-  return layout(`<main class="site-main legal" id="main"><p class="eyebrow">Use agreement</p><h1>Terms</h1><p class="lede">A private thinking tool, not an authority on what you know.</p><p><strong>Last updated:</strong> August 30, 2026</p><h2>The service</h2><p>Knowledge Boundary Map lets you create a local map and record your own self-assessments. It does not fact-check claims, measure intelligence, certify expertise, or replace a teacher or professional advice. Check important information against reliable sources.</p><h2>Free use</h2><p>The app includes up to ${FREE_CLAIM_LIMIT} claims per local map, the complete rehearsal flow, and JSON and CSV export. No purchase is offered in this release.</p><h2>Availability and data</h2><p>The app is provided “as is” without a promise of uninterrupted availability. Data is stored locally, so export backups. Clearing browser data, changing devices, or browser failures can remove the local map.</p><h2>Acceptable use</h2><p>Do not interfere with the service or use the app unlawfully. The software is also available under its repository’s MIT license.</p><h2>Changes and contact</h2><p>Material changes will be reflected by the date above. Questions can be sent to <a href="mailto:support@sociobot.in">support@sociobot.in</a>.</p></main>`);
+  return layout(`<main class="site-main legal" id="main"><p class="eyebrow">Use agreement</p><h1>Terms</h1><p class="lede">A private thinking tool, not an authority on what you know.</p><p><strong>Last updated:</strong> September 1, 2026</p><h2>The service</h2><p>Knowledge Boundary Map lets you create a map in your browser and record your own self-assessments. It does not fact-check claims, measure intelligence, certify expertise, or replace a teacher or professional advice. Check important information against reliable sources.</p><h2>Free use</h2><p>Each map holds up to ${FREE_CLAIM_LIMIT} claims. Every claim can use the 90-second teach-back. You can export JSON or CSV. No purchase is offered in this release.</p><h2>Availability and data</h2><p>The app is provided “as is” without a promise of uninterrupted availability. Your map is saved only in this browser, so export backups. Clearing browser data, changing devices, or browser failures can remove the map.</p><h2>Acceptable use</h2><p>Do not interfere with the service or use the app unlawfully. The software is also available under its repository’s MIT license.</p><h2>Changes and contact</h2><p>Material changes will be reflected by the date above. Questions can be sent to <a href="mailto:support@sociobot.in">support@sociobot.in</a>.</p></main>`);
 }
 
 function notFoundPage(): string {
-  return layout(`<main class="site-main legal not-found" id="main"><p class="eyebrow">Missing paper slip</p><h1>That page is not in this map.</h1><p class="lede">The address may be incomplete, or the page may have moved.</p><a class="button primary" href="${routeHref('/')}" data-route>Go to your map</a></main>`);
+  return layout(`<main class="site-main legal not-found" id="main"><p class="eyebrow">Missing page</p><h1>Page not found.</h1><p class="lede">The address may be incomplete, or the page may have moved.</p><a class="button primary" href="/" data-route${demoMode ? ' data-exit-demo="true"' : ''}>Go to your map</a></main>`);
 }
 
 function route(options: RouteOptions = {}): void {
@@ -252,7 +252,14 @@ function rememberScrollPosition(): void {
 function syncModeWithLocation(): void {
   const nextDemo = isDemoLocation();
   if (nextDemo !== demoMode) {
+    const leftDemo = demoMode && !nextDemo;
+    if (leftDemo) {
+      try {
+        [STORAGE_KEY, THEME_KEY].forEach((key) => localStorage.removeItem(scopedKey(key, true)));
+      } catch { storageAvailable = false; }
+    }
     demoMode = nextDemo;
+    applyTheme();
     map = loadMap();
     selectedClaimId = '';
   }
@@ -302,6 +309,7 @@ function enterDemo(): void {
   rememberScrollPosition();
   history.pushState({}, '', '/demo');
   demoMode = true;
+  applyTheme();
   map = loadMap();
   ensureSampleMap();
   route({ scroll: 'top' });
@@ -321,6 +329,7 @@ function startForReal(): void {
     [STORAGE_KEY, THEME_KEY].forEach((key) => localStorage.removeItem(scopedKey(key, true)));
   } catch { storageAvailable = false; }
   demoMode = false;
+  applyTheme();
   map = loadMap();
   selectedClaimId = '';
   rememberScrollPosition();
@@ -341,7 +350,11 @@ function bindCommon(): void {
       main?.scrollIntoView();
     });
   }
-  document.querySelectorAll<HTMLAnchorElement>('[data-route]').forEach((link) => link.addEventListener('click', (event) => { event.preventDefault(); navigate(new URL(link.href).pathname); }));
+  document.querySelectorAll<HTMLAnchorElement>('[data-route]').forEach((link) => link.addEventListener('click', (event) => {
+    event.preventDefault();
+    if (link.dataset.exitDemo === 'true') startForReal();
+    else navigate(new URL(link.href).pathname);
+  }));
   document.querySelector('#theme-toggle')?.addEventListener('click', () => {
     const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
     document.documentElement.dataset.theme = next;
