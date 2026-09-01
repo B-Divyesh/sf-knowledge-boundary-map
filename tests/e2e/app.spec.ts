@@ -99,19 +99,60 @@ test('@claim:csv-export exports every completed sample claim', async ({ page }) 
   expect(csv).toContain('Random assignment reduces systematic confounding');
 });
 
-test('@claim:json-restore restores a saved counterexample and next question', async ({ page }) => {
+test('@claim:json-restore replaces another map and restores every full-map field', async ({ page }) => {
   await openDemo(page);
   await page.getByRole('button', { name: 'Export' }).click();
   const downloadPromise = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Download JSON' }).click();
   const exported = await readFile((await (await downloadPromise).path())!, 'utf8');
   await page.getByRole('button', { name: 'Close' }).click();
+
+  await page.evaluate(() => {
+    const now = new Date().toISOString();
+    localStorage.setItem('demo:kbm:map:v1', JSON.stringify({
+      version: 1,
+      topic: 'Replacement map',
+      claims: [{
+        id: 'replacement-claim',
+        title: 'This claim must disappear after import',
+        context: '',
+        prerequisiteIds: [],
+        status: 'untested',
+        teachBack: '',
+        counterexample: '',
+        nextProbe: '',
+        createdAt: now,
+        updatedAt: now,
+        rehearsals: [],
+      }],
+    }));
+  });
+  await page.reload();
+  await expect(page.getByLabel('Topic name')).toHaveValue('Replacement map');
+  await expect(page.getByRole('button', { name: /This claim must disappear after import/ })).toBeVisible();
+  await expect(page.getByRole('button', { name: /^Can explain A correlation/ })).toHaveCount(0);
+
   await page.getByRole('button', { name: 'Export' }).click();
   page.once('dialog', dialog => dialog.accept());
   await page.locator('#import-file').setInputFiles({ name: 'map.json', mimeType: 'application/json', buffer: Buffer.from(exported) });
+  await expect(page.getByText('Map imported.')).toBeVisible();
+  await expect(page.getByLabel('Topic name')).toHaveValue('Causal inference basics');
+  await expect(page.locator('[data-claim-id]')).toHaveCount(3);
+  await expect(page.getByRole('button', { name: /This claim must disappear after import/ })).toHaveCount(0);
+  const dependentClaim = page.getByRole('button', { name: /^Blocked Random assignment/ });
+  await expect(dependentClaim).toContainText('Needs: A correlation does not by itself show causation, A confounder can affect both measured variables');
+
   await page.getByRole('button', { name: /^Can explain A correlation/ }).click();
   await expect(page.getByLabel('Counterexample or boundary')).toHaveValue(/Ice-cream sales/);
   await expect(page.getByLabel('Next question *')).toHaveValue(/Draw a causal graph/);
+  const history = page.locator('.history details');
+  await expect(history).toHaveCount(1);
+  await expect(history.first()).toContainText('Two variables can move together');
+  await page.getByRole('button', { name: 'Close' }).click();
+
+  await page.reload();
+  await expect(page.getByLabel('Topic name')).toHaveValue('Causal inference basics');
+  await expect(page.locator('[data-claim-id]')).toHaveCount(3);
 });
 
 test('@claim:keyboard-dialog opens a claim with Enter and restores focus after Escape', async ({ page }) => {
@@ -229,6 +270,38 @@ test('@finding:rehearsal-history disclosure opens with a 44px target at desktop 
         expect(box!.height).toBeGreaterThanOrEqual(44);
         await disclosure.click();
         await expect(history).toHaveAttribute('open', '');
+      } finally {
+        await context.close();
+      }
+    }
+  }
+});
+
+test('@finding:legal-and-prerequisite-targets stay at least 44px at desktop and 390px in both themes', async ({ browser }) => {
+  for (const colorScheme of ['light', 'dark'] as const) {
+    for (const viewport of [{ width: 1366, height: 900 }, { width: 390, height: 844 }]) {
+      const context = await browser.newContext({ colorScheme, viewport });
+      const page = await context.newPage();
+      try {
+        for (const [path, name] of [['/privacy', 'privacy@sociobot.in'], ['/terms', 'support@sociobot.in']] as const) {
+          await page.goto(path);
+          const contact = page.getByRole('link', { name });
+          const box = await contact.boundingBox();
+          expect(box, `${colorScheme} ${viewport.width}px ${name} should have a box`).not.toBeNull();
+          expect(box!.width).toBeGreaterThanOrEqual(44);
+          expect(box!.height).toBeGreaterThanOrEqual(44);
+        }
+
+        await page.goto('/demo');
+        await page.getByRole('button', { name: 'Pin a claim' }).click();
+        const prerequisiteTargets = await page.locator('.check-option').all();
+        expect(prerequisiteTargets).toHaveLength(3);
+        for (const prerequisite of prerequisiteTargets) {
+          const box = await prerequisite.boundingBox();
+          expect(box, `${colorScheme} ${viewport.width}px prerequisite should have a box`).not.toBeNull();
+          expect(box!.width).toBeGreaterThanOrEqual(44);
+          expect(box!.height).toBeGreaterThanOrEqual(44);
+        }
       } finally {
         await context.close();
       }
