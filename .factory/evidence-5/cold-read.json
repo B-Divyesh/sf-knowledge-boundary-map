@@ -1,0 +1,325 @@
+{
+  "mobile-390": {
+    "status": 200,
+    "title": "Knowledge Boundary Map — test what you can explain",
+    "url": "https://knowledge-boundary-map.sociobot.in/",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "scrollY": 0,
+    "visibleText": [
+      "↗",
+      "Boundary Map",
+      "Demo",
+      "Privacy",
+      "After reading, watching, or taking notes",
+      "Test what you can explain.",
+      "For self-learners who want to separate recognition from an explanation they can produce.",
+      "Try it with sample data",
+      "Opens a completed causal-inference map.",
+      "Pin your first claim",
+      "Private: stored in this browser.",
+      "Offline: reloads after your first visit.",
+      "Free: up to 12 claims per map."
+    ],
+    "controls": [
+      {
+        "name": "Skip to your map",
+        "tag": "a",
+        "href": "https://knowledge-boundary-map.sociobot.in/#main",
+        "top": -64,
+        "bottom": -19,
+        "visibleInViewport": false
+      },
+      {
+        "name": "Knowledge Boundary Map home",
+        "tag": "a",
+        "href": "https://knowledge-boundary-map.sociobot.in/",
+        "top": 10,
+        "bottom": 54,
+        "visibleInViewport": true
+      },
+      {
+        "name": "Demo",
+        "tag": "a",
+        "href": "https://knowledge-boundary-map.sociobot.in/demo",
+        "top": 10,
+        "bottom": 54,
+        "visibleInViewport": true
+      },
+      {
+        "name": "Privacy",
+        "tag": "a",
+        "href": "https://knowledge-boundary-map.sociobot.in/privacy",
+        "top": 10,
+        "bottom": 54,
+        "visibleInViewport": true
+      },
+      {
+        "name": "Use dark theme",
+        "tag": "button",
+        "href": null,
+        "top": 10,
+        "bottom": 54,
+        "visibleInViewport": true
+      },
+      {
+        "name": "Try it with sample data",
+        "tag": "button",
+        "href": null,
+        "top": 361,
+        "bottom": 410,
+        "visibleInViewport": true
+      },
+      {
+        "name": "Pin your first claim",
+        "tag": "button",
+        "href": null,
+        "top": 447,
+        "bottom": 496,
+        "visibleInViewport": true
+      },
+      {
+        "name": "Close",
+        "tag": "button",
+        "href": null,
+        "top": 0,
+        "bottom": 0,
+        "visibleInViewport": false
+      },
+      {
+        "name": "",
+        "tag": "input",
+        "href": null,
+        "top": 0,
+        "bottom": 0,
+        "visibleInViewport": false
+      },
+      {
+        "name": "",
+        "tag": "textarea",
+        "href": null,
+        "top": 0,
+        "bottom": 0,
+        "visibleInViewport": false
+      },
+      {
+        "name": "Pin this claim",
+        "tag": "button",
+        "href": null,
+        "top": 0,
+        "bottom": 0,
+        "visibleInViewport": false
+      },
+      {
+        "name": "Cancel",
+        "tag": "button",
+        "href": null,
+        "top": 0,
+        "bottom": 0,
+        "visibleInViewport": false
+      },
+      {
+        "name": "Privacy",
+        "tag": "a",
+        "href": "https://knowledge-boundary-map.sociobot.in/privacy",
+        "top": 2767,
+        "bottom": 2811,
+        "visibleInViewport": false
+      },
+      {
+        "name": "Terms",
+        "tag": "a",
+        "href": "https://knowledge-boundary-map.sociobot.in/terms",
+        "top": 2767,
+        "bottom": 2811,
+        "visibleInViewport": false
+      },
+      {
+        "name": "Source on GitHub",
+        "tag": "a",
+        "href": "https://github.com/B-Divyesh/sf-knowledge-boundary-map",
+        "top": 2767,
+        "bottom": 2811,
+        "visibleInViewport": false
+      },
+      {
+        "name": "Undo",
+        "tag": "button",
+        "href": null,
+        "top": 0,
+        "bottom": 0,
+        "visibleInViewport": false
+      }
+    ],
+    "requestOrigins": [
+      "https://knowledge-boundary-map.sociobot.in"
+    ],
+    "errors": []
+  },
+  "desktop": {
+    "status": 200,
+    "title": "Knowledge Boundary Map — test what you can explain",
+    "url": "https://knowledge-boundary-map.sociobot.in/",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "scrollY": 0,
+    "visibleText": [
+      "↗",
+      "Knowledge Boundary Map",
+      "Demo",
+      "Privacy",
+      "After reading, watching, or taking notes",
+      "Test what you can explain.",
+      "For self-learners who want to separate recognition from an explanation they can produce.",
+      "Try it with sample data",
+      "Opens a completed causal-inference map.",
+      "Pin your first claim",
+      "Private: stored in this browser.",
+      "Offline: reloads after your first visit.",
+      "Free: up to 12 claims per map.",
+      "Record your own evidence and uncertainty. This tool does not score intelligence.",
+      "Live preview",
+      "Preview a claim map.",
+      "Correlation is not causation",
+      "Can explain"
+    ],
+    "controls": [
+      {
+        "name": "Skip to your map",
+        "tag": "a",
+        "href": "https://knowledge-boundary-map.sociobot.in/#main",
+        "top": -64,
+        "bottom": -19,
+        "visibleInViewport": false
+      },
+      {
+        "name": "Knowledge Boundary Map home",
+        "tag": "a",
+        "href": "https://knowledge-boundary-map.sociobot.in/",
+        "top": 14,
+        "bottom": 58,
+        "visibleInViewport": true
+      },
+      {
+        "name": "Demo",
+        "tag": "a",
+        "href": "https://knowledge-boundary-map.sociobot.in/demo",
+        "top": 14,
+        "bottom": 58,
+        "visibleInViewport": true
+      },
+      {
+        "name": "Privacy",
+        "tag": "a",
+        "href": "https://knowledge-boundary-map.sociobot.in/privacy",
+        "top": 14,
+        "bottom": 58,
+        "visibleInViewport": true
+      },
+      {
+        "name": "Use dark theme",
+        "tag": "button",
+        "href": null,
+        "top": 14,
+        "bottom": 58,
+        "visibleInViewport": true
+      },
+      {
+        "name": "Try it with sample data",
+        "tag": "button",
+        "href": null,
+        "top": 442,
+        "bottom": 490,
+        "visibleInViewport": true
+      },
+      {
+        "name": "Pin your first claim",
+        "tag": "button",
+        "href": null,
+        "top": 442,
+        "bottom": 490,
+        "visibleInViewport": true
+      },
+      {
+        "name": "Close",
+        "tag": "button",
+        "href": null,
+        "top": 0,
+        "bottom": 0,
+        "visibleInViewport": false
+      },
+      {
+        "name": "",
+        "tag": "input",
+        "href": null,
+        "top": 0,
+        "bottom": 0,
+        "visibleInViewport": false
+      },
+      {
+        "name": "",
+        "tag": "textarea",
+        "href": null,
+        "top": 0,
+        "bottom": 0,
+        "visibleInViewport": false
+      },
+      {
+        "name": "Pin this claim",
+        "tag": "button",
+        "href": null,
+        "top": 0,
+        "bottom": 0,
+        "visibleInViewport": false
+      },
+      {
+        "name": "Cancel",
+        "tag": "button",
+        "href": null,
+        "top": 0,
+        "bottom": 0,
+        "visibleInViewport": false
+      },
+      {
+        "name": "Privacy",
+        "tag": "a",
+        "href": "https://knowledge-boundary-map.sociobot.in/privacy",
+        "top": 2076,
+        "bottom": 2120,
+        "visibleInViewport": false
+      },
+      {
+        "name": "Terms",
+        "tag": "a",
+        "href": "https://knowledge-boundary-map.sociobot.in/terms",
+        "top": 2076,
+        "bottom": 2120,
+        "visibleInViewport": false
+      },
+      {
+        "name": "Source on GitHub",
+        "tag": "a",
+        "href": "https://github.com/B-Divyesh/sf-knowledge-boundary-map",
+        "top": 2076,
+        "bottom": 2120,
+        "visibleInViewport": false
+      },
+      {
+        "name": "Undo",
+        "tag": "button",
+        "href": null,
+        "top": 0,
+        "bottom": 0,
+        "visibleInViewport": false
+      }
+    ],
+    "requestOrigins": [
+      "https://knowledge-boundary-map.sociobot.in"
+    ],
+    "errors": []
+  }
+}

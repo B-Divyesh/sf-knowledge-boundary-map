@@ -1,0 +1,14 @@
+{
+  "url": "https://knowledge-boundary-map.sociobot.in",
+  "loadMs": 597,
+  "errors": [],
+  "a11y": {
+    "title": "Knowledge Boundary Map — test what you can explain",
+    "lang": "en",
+    "h1": 1,
+    "main": true,
+    "imgsMissingAlt": 0,
+    "buttonsUnlabeled": 0,
+    "textLength": 1363
+  }
+}

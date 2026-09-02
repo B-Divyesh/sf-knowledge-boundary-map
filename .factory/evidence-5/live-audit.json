@@ -1,0 +1,297 @@
+{
+  "checkedAt": "2026-09-02T00:27:33.037Z",
+  "origin": "https://knowledge-boundary-map.sociobot.in",
+  "routes": [
+    {
+      "path": "/",
+      "status": 200,
+      "title": "Knowledge Boundary Map — test what you can explain",
+      "heading": "Test what you can explain.",
+      "result": "PASS"
+    },
+    {
+      "path": "/demo",
+      "status": 200,
+      "title": "Demo — Knowledge Boundary Map",
+      "heading": "Your explanation map",
+      "result": "PASS"
+    },
+    {
+      "path": "/privacy",
+      "status": 200,
+      "title": "Privacy — Knowledge Boundary Map",
+      "heading": "Privacy",
+      "result": "PASS"
+    },
+    {
+      "path": "/terms",
+      "status": 200,
+      "title": "Terms — Knowledge Boundary Map",
+      "heading": "Terms",
+      "result": "PASS"
+    },
+    {
+      "path": "/missing-review-5",
+      "status": 404,
+      "title": "Page not found — Knowledge Boundary Map",
+      "heading": "Page not found.",
+      "result": "PASS"
+    }
+  ],
+  "matrix": [
+    {
+      "viewport": "mobile",
+      "colorScheme": "light",
+      "path": "/",
+      "status": 200,
+      "axeSeriousCritical": 0,
+      "overflowPx": 0,
+      "targetsBelow44": 0
+    },
+    {
+      "viewport": "mobile",
+      "colorScheme": "light",
+      "path": "/demo",
+      "status": 200,
+      "axeSeriousCritical": 0,
+      "overflowPx": 0,
+      "targetsBelow44": 0
+    },
+    {
+      "viewport": "mobile",
+      "colorScheme": "light",
+      "path": "/privacy",
+      "status": 200,
+      "axeSeriousCritical": 0,
+      "overflowPx": 0,
+      "targetsBelow44": 0
+    },
+    {
+      "viewport": "mobile",
+      "colorScheme": "light",
+      "path": "/terms",
+      "status": 200,
+      "axeSeriousCritical": 0,
+      "overflowPx": 0,
+      "targetsBelow44": 0
+    },
+    {
+      "viewport": "mobile",
+      "colorScheme": "light",
+      "path": "/missing-review-5",
+      "status": 404,
+      "axeSeriousCritical": 0,
+      "overflowPx": 0,
+      "targetsBelow44": 0
+    },
+    {
+      "viewport": "mobile",
+      "colorScheme": "dark",
+      "path": "/",
+      "status": 200,
+      "axeSeriousCritical": 0,
+      "overflowPx": 0,
+      "targetsBelow44": 0
+    },
+    {
+      "viewport": "mobile",
+      "colorScheme": "dark",
+      "path": "/demo",
+      "status": 200,
+      "axeSeriousCritical": 0,
+      "overflowPx": 0,
+      "targetsBelow44": 0
+    },
+    {
+      "viewport": "mobile",
+      "colorScheme": "dark",
+      "path": "/privacy",
+      "status": 200,
+      "axeSeriousCritical": 0,
+      "overflowPx": 0,
+      "targetsBelow44": 0
+    },
+    {
+      "viewport": "mobile",
+      "colorScheme": "dark",
+      "path": "/terms",
+      "status": 200,
+      "axeSeriousCritical": 0,
+      "overflowPx": 0,
+      "targetsBelow44": 0
+    },
+    {
+      "viewport": "mobile",
+      "colorScheme": "dark",
+      "path": "/missing-review-5",
+      "status": 404,
+      "axeSeriousCritical": 0,
+      "overflowPx": 0,
+      "targetsBelow44": 0
+    },
+    {
+      "viewport": "desktop",
+      "colorScheme": "light",
+      "path": "/",
+      "status": 200,
+      "axeSeriousCritical": 0,
+      "overflowPx": 0,
+      "targetsBelow44": 0
+    },
+    {
+      "viewport": "desktop",
+      "colorScheme": "light",
+      "path": "/demo",
+      "status": 200,
+      "axeSeriousCritical": 0,
+      "overflowPx": 0,
+      "targetsBelow44": 0
+    },
+    {
+      "viewport": "desktop",
+      "colorScheme": "light",
+      "path": "/privacy",
+      "status": 200,
+      "axeSeriousCritical": 0,
+      "overflowPx": 0,
+      "targetsBelow44": 0
+    },
+    {
+      "viewport": "desktop",
+      "colorScheme": "light",
+      "path": "/terms",
+      "status": 200,
+      "axeSeriousCritical": 0,
+      "overflowPx": 0,
+      "targetsBelow44": 0
+    },
+    {
+      "viewport": "desktop",
+      "colorScheme": "light",
+      "path": "/missing-review-5",
+      "status": 404,
+      "axeSeriousCritical": 0,
+      "overflowPx": 0,
+      "targetsBelow44": 0
+    },
+    {
+      "viewport": "desktop",
+      "colorScheme": "dark",
+      "path": "/",
+      "status": 200,
+      "axeSeriousCritical": 0,
+      "overflowPx": 0,
+      "targetsBelow44": 0
+    },
+    {
+      "viewport": "desktop",
+      "colorScheme": "dark",
+      "path": "/demo",
+      "status": 200,
+      "axeSeriousCritical": 0,
+      "overflowPx": 0,
+      "targetsBelow44": 0
+    },
+    {
+      "viewport": "desktop",
+      "colorScheme": "dark",
+      "path": "/privacy",
+      "status": 200,
+      "axeSeriousCritical": 0,
+      "overflowPx": 0,
+      "targetsBelow44": 0
+    },
+    {
+      "viewport": "desktop",
+      "colorScheme": "dark",
+      "path": "/terms",
+      "status": 200,
+      "axeSeriousCritical": 0,
+      "overflowPx": 0,
+      "targetsBelow44": 0
+    },
+    {
+      "viewport": "desktop",
+      "colorScheme": "dark",
+      "path": "/missing-review-5",
+      "status": 404,
+      "axeSeriousCritical": 0,
+      "overflowPx": 0,
+      "targetsBelow44": 0
+    }
+  ],
+  "links": [
+    {
+      "href": "https://github.com/B-Divyesh/sf-knowledge-boundary-map",
+      "status": 200
+    },
+    {
+      "href": "https://knowledge-boundary-map.sociobot.in/",
+      "status": 200
+    },
+    {
+      "href": "https://knowledge-boundary-map.sociobot.in/#main",
+      "status": "allowed"
+    },
+    {
+      "href": "https://knowledge-boundary-map.sociobot.in/demo",
+      "status": 200
+    },
+    {
+      "href": "https://knowledge-boundary-map.sociobot.in/demo#main",
+      "status": "allowed"
+    },
+    {
+      "href": "https://knowledge-boundary-map.sociobot.in/missing-review-5#main",
+      "status": "allowed"
+    },
+    {
+      "href": "https://knowledge-boundary-map.sociobot.in/privacy",
+      "status": 200
+    },
+    {
+      "href": "https://knowledge-boundary-map.sociobot.in/privacy#main",
+      "status": "allowed"
+    },
+    {
+      "href": "https://knowledge-boundary-map.sociobot.in/privacy?demo=1",
+      "status": 200
+    },
+    {
+      "href": "https://knowledge-boundary-map.sociobot.in/terms",
+      "status": 200
+    },
+    {
+      "href": "https://knowledge-boundary-map.sociobot.in/terms#main",
+      "status": "allowed"
+    },
+    {
+      "href": "https://knowledge-boundary-map.sociobot.in/terms?demo=1",
+      "status": 200
+    },
+    {
+      "href": "mailto:privacy@sociobot.in",
+      "status": "allowed"
+    },
+    {
+      "href": "mailto:support@sociobot.in",
+      "status": "allowed"
+    }
+  ],
+  "demo": {
+    "completedSample": "PASS",
+    "reset": "PASS",
+    "mapIsolation": "PASS",
+    "themeIsolation": "PASS",
+    "exitCleanup": "PASS",
+    "exitFocus": "PASS"
+  },
+  "history": "PASS",
+  "requests": {
+    "origins": [
+      "https://knowledge-boundary-map.sociobot.in"
+    ],
+    "unexpected": 0
+  },
+  "consoleErrors": 0
+}
