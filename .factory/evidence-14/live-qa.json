@@ -1,0 +1,143 @@
+{
+  "base": "https://knowledge-boundary-map.sociobot.in",
+  "requests": [
+    "https://knowledge-boundary-map.sociobot.in/",
+    "https://knowledge-boundary-map.sociobot.in/assets/index-TFzw1x8X.js",
+    "https://knowledge-boundary-map.sociobot.in/assets/index-B4EWOLRp.css",
+    "https://knowledge-boundary-map.sociobot.in/assets/boundary-diorama.avif",
+    "https://knowledge-boundary-map.sociobot.in/",
+    "https://knowledge-boundary-map.sociobot.in/assets/index-TFzw1x8X.js",
+    "https://knowledge-boundary-map.sociobot.in/assets/index-B4EWOLRp.css",
+    "https://knowledge-boundary-map.sociobot.in/assets/boundary-diorama.avif",
+    "https://knowledge-boundary-map.sociobot.in/",
+    "https://knowledge-boundary-map.sociobot.in/assets/index-TFzw1x8X.js",
+    "https://knowledge-boundary-map.sociobot.in/assets/index-B4EWOLRp.css",
+    "https://knowledge-boundary-map.sociobot.in/assets/boundary-diorama.avif",
+    "https://knowledge-boundary-map.sociobot.in/demo",
+    "https://knowledge-boundary-map.sociobot.in/assets/index-TFzw1x8X.js",
+    "https://knowledge-boundary-map.sociobot.in/assets/index-B4EWOLRp.css",
+    "https://knowledge-boundary-map.sociobot.in/",
+    "https://knowledge-boundary-map.sociobot.in/assets/index-TFzw1x8X.js",
+    "https://knowledge-boundary-map.sociobot.in/assets/index-B4EWOLRp.css",
+    "https://knowledge-boundary-map.sociobot.in/demo",
+    "https://knowledge-boundary-map.sociobot.in/assets/index-TFzw1x8X.js",
+    "https://knowledge-boundary-map.sociobot.in/assets/index-B4EWOLRp.css",
+    "https://knowledge-boundary-map.sociobot.in/privacy",
+    "https://knowledge-boundary-map.sociobot.in/assets/index-TFzw1x8X.js",
+    "https://knowledge-boundary-map.sociobot.in/assets/index-B4EWOLRp.css",
+    "https://knowledge-boundary-map.sociobot.in/terms",
+    "https://knowledge-boundary-map.sociobot.in/assets/index-TFzw1x8X.js",
+    "https://knowledge-boundary-map.sociobot.in/assets/index-B4EWOLRp.css",
+    "https://knowledge-boundary-map.sociobot.in/404.html",
+    "https://knowledge-boundary-map.sociobot.in/404.css",
+    "https://knowledge-boundary-map.sociobot.in/404.js"
+  ],
+  "consoleErrors": [],
+  "pageErrors": [],
+  "checks": {
+    "firstRead": {
+      "title": "Knowledge Boundary Map — test what you can explain",
+      "h1": [
+        "Test what you can explain."
+      ],
+      "audience": true,
+      "demoAction": true,
+      "demoOutcome": true
+    },
+    "skipLink": "Tab exposed the skip link; Enter focused #main",
+    "boundaryCreate": {
+      "title": 160,
+      "context": 600,
+      "blankRejected": true
+    },
+    "rehearsalRecovery": {
+      "recoveryText": "Add a counterexample or boundary before marking this “can explain.”\nChoose a next question so this result leads somewhere.",
+      "persistedAfterReload": true,
+      "focusStyle": {
+        "outlineColor": "rgb(118, 80, 0)",
+        "outlineStyle": "solid",
+        "outlineWidth": "3px"
+      }
+    },
+    "removeRecovery": "cancel preserved claim; confirmed removal; Undo restored it",
+    "invalidImport": "This file is not valid JSON. Choose a Knowledge Boundary Map JSON export and try again.",
+    "reducedMotion": {
+      "animationDuration": "1e-05s",
+      "transitionDuration": "1e-05s",
+      "scrollBehavior": "auto"
+    },
+    "desktopAxe": [
+      {
+        "path": "/",
+        "title": "Knowledge Boundary Map — test what you can explain",
+        "h1": 1,
+        "seriousCritical": 0
+      },
+      {
+        "path": "/demo",
+        "title": "Demo — Knowledge Boundary Map",
+        "h1": 1,
+        "seriousCritical": 0
+      },
+      {
+        "path": "/privacy",
+        "title": "Privacy — Knowledge Boundary Map",
+        "h1": 1,
+        "seriousCritical": 0
+      },
+      {
+        "path": "/terms",
+        "title": "Terms — Knowledge Boundary Map",
+        "h1": 1,
+        "seriousCritical": 0
+      },
+      {
+        "path": "/404.html",
+        "title": "Page not found — Knowledge Boundary Map",
+        "h1": 1,
+        "seriousCritical": 0
+      }
+    ],
+    "mobile": {
+      "axeSeriousCritical": 0,
+      "targetCount": 17,
+      "minWidth": 44,
+      "minHeight": 44,
+      "overflow": 0,
+      "zoom200": {
+        "overflow": 0,
+        "h1Visible": true
+      }
+    },
+    "offline": {
+      "controller": true,
+      "caches": [
+        "kbm-shell-7782b3058487"
+      ]
+    },
+    "storageFailure": "warning shown; in-memory claim remained available; Export remained available"
+  },
+  "homeHeaders": {
+    "cache-control": "public, must-revalidate, max-age=30",
+    "content-encoding": "br",
+    "content-security-policy": "default-src 'self'; base-uri 'self'; connect-src 'self'; font-src 'self'; form-action 'self'; frame-ancestors 'none'; img-src 'self' data:; manifest-src 'self'; object-src 'none'; script-src 'self'; style-src 'self'; worker-src 'self'; upgrade-insecure-requests",
+    "content-type": "text/html",
+    "date": "Wed, 02 Sep 2026 00:11:13 GMT",
+    "etag": "\"57412688\"",
+    "last-modified": "Tue, 01 Sep 2026 23:51:50 GMT",
+    "permissions-policy": "camera=(), microphone=(), geolocation=()",
+    "referrer-policy": "strict-origin-when-cross-origin",
+    "strict-transport-security": "max-age=10886400; includeSubDomains; preload",
+    "vary": "Accept-Encoding",
+    "x-content-type-options": "nosniff",
+    "x-dns-prefetch-control": "off",
+    "x-frame-options": "DENY",
+    "x-xss-protection": "1; mode=block"
+  },
+  "requestSummary": {
+    "count": 30,
+    "origins": [
+      "https://knowledge-boundary-map.sociobot.in"
+    ]
+  }
+}

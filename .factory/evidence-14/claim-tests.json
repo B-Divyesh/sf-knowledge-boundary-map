@@ -1,0 +1,22 @@
+{
+  "candidate": "ec985d133db89b2e1d44b43fd15ae636aeb4b0c2",
+  "entryPoint": "/demo",
+  "result": "PASS",
+  "passed": 13,
+  "failed": 0,
+  "tests": [
+    {"id":"demo-sandbox","command":"npm run test:e2e -- --grep @claim:demo-sandbox","exitCode":0,"seconds":8.8},
+    {"id":"local-only","command":"npm run test:e2e -- --grep @claim:local-only","exitCode":0,"seconds":9.3},
+    {"id":"offline-reload","command":"npm run test:e2e -- --grep @claim:offline-reload","exitCode":0,"seconds":8.3},
+    {"id":"csv-export","command":"npm run test:e2e -- --grep @claim:csv-export","exitCode":0,"seconds":7.8},
+    {"id":"json-restore","command":"npm run test:e2e -- --grep @claim:json-restore","exitCode":0,"seconds":9.0},
+    {"id":"keyboard-dialog","command":"npm run test:e2e -- --grep @claim:keyboard-dialog","exitCode":0,"seconds":8.1},
+    {"id":"free-workshop","command":"npm run test:e2e -- --grep @claim:free-workshop","exitCode":0,"seconds":8.2},
+    {"id":"self-assessment-label","command":"npm run test:e2e -- --grep @claim:self-assessment-label","exitCode":0,"seconds":8.8},
+    {"id":"theme-storage","command":"npm run test:e2e -- --grep @claim:theme-storage","exitCode":0,"seconds":8.6},
+    {"id":"prerequisites","command":"npm run test:e2e -- --grep @claim:prerequisites","exitCode":0,"seconds":8.4},
+    {"id":"teach-back-timer","command":"npm run test:e2e -- --grep @claim:teach-back-timer","exitCode":0,"seconds":9.8},
+    {"id":"counterexample-capture","command":"npm run test:e2e -- --grep @claim:counterexample-capture","exitCode":0,"seconds":8.5},
+    {"id":"next-question","command":"npm run test:e2e -- --grep @claim:next-question","exitCode":0,"seconds":7.6}
+  ]
+}
